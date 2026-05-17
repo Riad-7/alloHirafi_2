@@ -4,6 +4,8 @@ import PostComposer from '../components/PostComposer.jsx';
 import StatCard from '../components/StatCard.jsx';
 import { useAuth } from '../context/AuthContext.jsx';
 import { apiRequest } from '../services/api.js';
+import { formatDateTime } from '../utils/date.js';
+import { buildAvatarUrl } from '../utils/userPresentation.js';
 
 export default function DashboardPage() {
   const { user } = useAuth();
@@ -101,9 +103,10 @@ export default function DashboardPage() {
           <p className="eyebrow">Tableau de bord</p>
           <h2>Bienvenue {dashboard.user.name}</h2>
           <p className="muted-copy">
-            Role: {dashboard.user.role} · Ville: {dashboard.user.city || 'Non precisee'}
+            Role: {dashboard.user.role} - Ville: {dashboard.user.city || 'Non precisee'}
           </p>
         </div>
+        <img src={buildAvatarUrl(dashboard.user)} alt={dashboard.user.name} className="avatar-lg" />
         {status ? <div className="status-pill">{status}</div> : null}
       </div>
 
@@ -136,16 +139,22 @@ export default function DashboardPage() {
         <aside className="panel">
           <div className="panel-heading">
             <h3>Notifications</h3>
-            <p>{dashboard.stats.notifications_unread} non lues</p>
+            <p>{notifications.filter((notification) => !notification.read_at).length} non lues</p>
           </div>
           <div className="notification-list">
             {notifications.map((notification) => (
               <article key={notification.id} className={`notification-item ${notification.read_at ? 'read' : 'unread'}`}>
-                <strong>{notification.title}</strong>
+                <div className="conversation-row">
+                  <strong>{notification.title}</strong>
+                  {!notification.read_at ? <span className="notification-badge">New</span> : null}
+                </div>
                 <p>{notification.body}</p>
-                <button className="ghost-button" onClick={() => markNotificationRead(notification.id)}>
-                  Marquer lu
-                </button>
+                <small>{formatDateTime(notification.created_at)}</small>
+                {!notification.read_at ? (
+                  <button className="ghost-button" onClick={() => markNotificationRead(notification.id)}>
+                    Marquer lu
+                  </button>
+                ) : null}
               </article>
             ))}
           </div>
@@ -154,3 +163,4 @@ export default function DashboardPage() {
     </section>
   );
 }
+

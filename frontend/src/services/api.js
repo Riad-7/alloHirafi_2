@@ -1,4 +1,5 @@
-const API_URL = import.meta.env.VITE_API_URL ?? 'http://127.0.0.1:8000/api';
+const browserHost = typeof window !== 'undefined' ? window.location.hostname : 'localhost';
+const API_URL = import.meta.env.VITE_API_URL ?? `http://${browserHost}:8000/api`;
 const BACKEND_URL = import.meta.env.VITE_BACKEND_URL ?? API_URL.replace(/\/api\/?$/, '');
 const SAFE_METHODS = new Set(['GET', 'HEAD', 'OPTIONS']);
 
@@ -28,6 +29,12 @@ async function ensureCsrfCookie() {
       .then((response) => {
         if (!response.ok) {
           throw new Error('Impossible de preparer la session CSRF.');
+        }
+
+        if (!readCookie('XSRF-TOKEN')) {
+          throw new Error(
+            'CSRF cookie introuvable. Utilise le meme host pour frontend/backend (localhost-localhost ou 127.0.0.1-127.0.0.1).',
+          );
         }
 
         csrfReady = true;

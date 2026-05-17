@@ -34,7 +34,7 @@ class QuoteController extends Controller
             'user_id' => $quote->client_id,
             'type' => 'quote',
             'title' => 'Nouveau devis',
-            'body' => $user->name.' a envoyé un devis.',
+            'body' => $user->name.' a envoye un devis.',
             'payload' => ['quote_id' => $quote->id],
         ]);
 
@@ -58,7 +58,7 @@ class QuoteController extends Controller
             'user_id' => $quote->artisan_id,
             'type' => 'quote_status',
             'title' => 'Mise a jour devis',
-            'body' => 'Votre devis a été '.$data['status'].'.',
+            'body' => 'Votre devis a ete '.$data['status'].'.',
             'payload' => ['quote_id' => $quote->id, 'status' => $data['status']],
         ]);
 
@@ -67,3 +67,5 @@ class QuoteController extends Controller
         ]);
     }
 }
+
+

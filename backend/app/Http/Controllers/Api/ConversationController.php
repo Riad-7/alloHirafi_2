@@ -17,10 +17,16 @@ class ConversationController extends Controller
 
         $conversations = Conversation::query()
             ->with(['client', 'artisan', 'messages.sender', 'quotes'])
+            ->withCount([
+                'messages as unread_messages_count' => fn ($query) => $query
+                    ->whereNull('read_at')
+                    ->where('sender_id', '!=', $user->id),
+            ])
             ->where(fn ($query) => $query
                 ->where('client_id', $user->id)
                 ->orWhere('artisan_id', $user->id))
             ->orderByDesc('last_message_at')
+            ->orderByDesc('updated_at')
             ->get();
 
         return response()->json(['conversations' => $conversations]);
@@ -69,7 +75,7 @@ class ConversationController extends Controller
     public function sendMessage(Request $request, Conversation $conversation): JsonResponse
     {
         $user = $request->user();
-        abort_if(! in_array($user->id, [$conversation->client_id, $conversation->artisan_id], true), 403);
+        $this->authorizeParticipant($conversation, $user->id);
 
         $data = $request->validate([
             'body' => ['required', 'string'],
@@ -94,5 +100,26 @@ class ConversationController extends Controller
         return response()->json([
             'message' => $message->load('sender'),
         ], 201);
+    }
+
+    public function markAsRead(Request $request, Conversation $conversation): JsonResponse
+    {
+        $user = $request->user();
+        $this->authorizeParticipant($conversation, $user->id);
+
+        $updated = $conversation->messages()
+            ->where('sender_id', '!=', $user->id)
+            ->whereNull('read_at')
+            ->update(['read_at' => now()]);
+
+        return response()->json([
+            'conversation_id' => $conversation->id,
+            'messages_marked_read' => $updated,
+        ]);
+    }
+
+    private function authorizeParticipant(Conversation $conversation, int $userId): void
+    {
+        abort_if(! in_array($userId, [$conversation->client_id, $conversation->artisan_id], true), 403);
     }
 }

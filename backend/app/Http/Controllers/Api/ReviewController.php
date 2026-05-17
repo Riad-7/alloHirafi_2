@@ -36,7 +36,7 @@ class ReviewController extends Controller
             'user_id' => $artisan->user_id,
             'type' => 'review',
             'title' => 'Nouvel avis',
-            'body' => $user->name.' a laissé une note de '.$review->rating.'/5.',
+            'body' => $user->name.' a laisse une note de '.$review->rating.'/5.',
             'payload' => ['review_id' => $review->id],
         ]);
 
@@ -46,3 +46,4 @@ class ReviewController extends Controller
         ], 201);
     }
 }
+

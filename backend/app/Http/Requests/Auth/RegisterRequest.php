@@ -31,6 +31,7 @@ class RegisterRequest extends FormRequest
             'role' => ['nullable', Rule::in(['client', 'artisan'])],
             'city' => ['nullable', 'string', 'max:120'],
             'phone' => ['nullable', 'string', 'max:50'],
+            'avatar' => ['nullable', 'url', 'max:2048'],
             'craft' => ['nullable', 'required_if:role,artisan', 'string', 'max:120'],
             'bio' => ['nullable', 'string'],
             'hourly_rate' => ['nullable', 'numeric', 'min:0'],

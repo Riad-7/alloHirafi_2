@@ -10,6 +10,7 @@ const registerInitial = {
   role: 'client',
   city: '',
   phone: '',
+  avatar: '',
   craft: '',
   bio: '',
   hourly_rate: '',
@@ -138,6 +139,10 @@ export default function AuthPage() {
               <label>
                 Telephone
                 <input value={registerForm.phone} onChange={(event) => setRegisterForm({ ...registerForm, phone: event.target.value })} />
+              </label>
+              <label>
+                URL image profile
+                <input value={registerForm.avatar} onChange={(event) => setRegisterForm({ ...registerForm, avatar: event.target.value })} />
               </label>
               <label>
                 Role

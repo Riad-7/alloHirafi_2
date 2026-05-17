@@ -11,8 +11,12 @@ class NotificationController extends Controller
 {
     public function index(Request $request): JsonResponse
     {
+        $notificationsQuery = $request->user()->notifications();
+        $notifications = $notificationsQuery->latest()->limit(40)->get();
+
         return response()->json([
-            'notifications' => $request->user()->notifications()->latest()->get(),
+            'notifications' => $notifications,
+            'unread_count' => (clone $notificationsQuery)->whereNull('read_at')->count(),
         ]);
     }
 

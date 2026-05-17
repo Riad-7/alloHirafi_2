@@ -1,11 +1,24 @@
+import { buildAvatarUrl } from '../utils/userPresentation.js';
+
 export default function ArtisanCard({ artisan, onContact, onReview }) {
+  const coverImage = artisan.posts?.[0]?.images?.[0]?.image_url;
+
   return (
     <article className="artisan-card">
+      {coverImage ? (
+        <div className="artisan-cover">
+          <img src={coverImage} alt={`Intervention de ${artisan.user.name}`} />
+        </div>
+      ) : null}
+
       <div className="artisan-card-top">
-        <div>
-          <p className="eyebrow">{artisan.user.city || 'Maroc'}</p>
-          <h3>{artisan.user.name}</h3>
-          <p>{artisan.craft}</p>
+        <div className="artisan-identity">
+          <img src={buildAvatarUrl(artisan.user)} alt={artisan.user.name} className="avatar-md" />
+          <div>
+            <p className="eyebrow">{artisan.user.city || 'Maroc'}</p>
+            <h3>{artisan.user.name}</h3>
+            <p>{artisan.craft}</p>
+          </div>
         </div>
         <div className="rating-badge">{artisan.average_rating}/5</div>
       </div>

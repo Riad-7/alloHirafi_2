@@ -10,7 +10,7 @@ class AiSearchInterpreter
     ];
 
     private const CRAFTS = [
-        'plombier', 'electricien', 'électricien', 'menuisier', 'maçon',
+        'plombier', 'electricien', 'electricien', 'menuisier', 'macon',
         'macon', 'peintre', 'climatisation', 'serrurier', 'carreleur',
     ];
 
@@ -40,3 +40,4 @@ class AiSearchInterpreter
         return null;
     }
 }
+
