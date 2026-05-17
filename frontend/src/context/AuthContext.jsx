@@ -7,6 +7,12 @@ export function AuthProvider({ children }) {
   const [user, setUser] = useState(null);
   const [booting, setBooting] = useState(true);
 
+  const refreshUser = async () => {
+    const data = await apiRequest('/user');
+    setUser(data.user);
+    return data.user;
+  };
+
   useEffect(() => {
     let cancelled = false;
 
@@ -41,10 +47,9 @@ export function AuthProvider({ children }) {
       body: payload,
     });
 
-    const me = await apiRequest('/user');
-    setUser(me.user);
+    const me = await refreshUser();
 
-    return me;
+    return { user: me };
   };
 
   const logout = async () => {
@@ -57,7 +62,7 @@ export function AuthProvider({ children }) {
     setUser(null);
   };
 
-  return <AuthContext.Provider value={{ user, setUser, booting, login, logout }}>{children}</AuthContext.Provider>;
+  return <AuthContext.Provider value={{ user, setUser, booting, login, logout, refreshUser }}>{children}</AuthContext.Provider>;
 }
 
 // eslint-disable-next-line react-refresh/only-export-components
