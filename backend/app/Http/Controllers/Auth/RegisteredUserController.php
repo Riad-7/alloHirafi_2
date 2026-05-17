@@ -22,6 +22,7 @@ class RegisteredUserController extends Controller
     public function store(RegisterRequest $request): Response
     {
         $data = $request->validated();
+        $generatedAvatar = 'https://ui-avatars.com/api/?name='.rawurlencode($data['name']).'&background=1f6feb&color=ffffff&size=256';
 
         $user = User::create([
             'name' => $data['name'],
@@ -30,6 +31,7 @@ class RegisteredUserController extends Controller
             'role' => $data['role'] ?? 'client',
             'city' => $data['city'] ?? null,
             'phone' => $data['phone'] ?? null,
+            'avatar' => $data['avatar'] ?? $generatedAvatar,
         ]);
 
         if ($user->role === 'artisan') {
