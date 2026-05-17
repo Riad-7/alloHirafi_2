@@ -134,7 +134,8 @@ textarea {
 .hero-layout,
 .content-grid,
 .two-column,
-.inbox-layout {
+.inbox-layout,
+.auth-layout {
   display: grid;
   gap: 1.25rem;
 }
@@ -142,6 +143,11 @@ textarea {
 .hero-layout,
 .two-column {
   grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.auth-layout {
+  grid-template-columns: minmax(280px, 0.9fr) minmax(0, 1.1fr);
+  align-items: start;
 }
 
 .content-grid {
@@ -156,6 +162,11 @@ textarea {
   background: rgba(255, 255, 255, 0.78);
   border: 1px solid rgba(20, 33, 61, 0.08);
   box-shadow: 0 18px 45px rgba(20, 33, 61, 0.08);
+}
+
+.auth-showcase,
+.auth-panel {
+  animation: fadeUp 420ms ease;
 }
 
 .hero-card,
@@ -227,6 +238,11 @@ textarea {
 .primary-button {
   background: linear-gradient(135deg, #fca311, #ff6b35);
   color: white;
+}
+
+.primary-button:disabled {
+  opacity: 0.7;
+  cursor: wait;
 }
 
 .ghost-button {
@@ -368,7 +384,45 @@ textarea {
   gap: 1rem;
 }
 
+.auth-panel {
+  backdrop-filter: blur(10px);
+}
+
+.auth-segmented {
+  margin-bottom: 0.8rem;
+}
+
+.auth-form {
+  animation: fadeIn 260ms ease;
+}
+
+.auth-pill-list {
+  margin-top: 1.2rem;
+  display: grid;
+  gap: 0.9rem;
+}
+
+.auth-pill-list div {
+  padding: 0.95rem 1rem;
+  border-radius: 16px;
+  background: rgba(20, 33, 61, 0.06);
+}
+
+.auth-pill-list small {
+  color: #5f6d86;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+.auth-pill-list strong {
+  display: block;
+  margin-top: 0.35rem;
+}
+
 .error-box {
+  border: 1px solid rgba(122, 31, 25, 0.15);
+  border-radius: 14px;
+  padding: 0.8rem 0.9rem;
   color: #7a1f19;
   background: rgba(255, 107, 53, 0.14);
 }
@@ -393,6 +447,7 @@ textarea {
   .hero-layout,
   .content-grid,
   .two-column,
+  .auth-layout,
   .inbox-layout,
   .form-grid {
     grid-template-columns: 1fr;
@@ -408,5 +463,25 @@ textarea {
 
   .message-bubble.mine {
     margin-left: 0;
+  }
+}
+
+@keyframes fadeUp {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
   }
 }
