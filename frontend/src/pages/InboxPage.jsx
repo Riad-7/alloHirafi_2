@@ -1,6 +1,8 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useAuth } from '../context/AuthContext.jsx';
 import { apiRequest } from '../services/api.js';
+import { formatDateTime } from '../utils/date.js';
+import { buildAvatarUrl, formatRole } from '../utils/userPresentation.js';
 
 export default function InboxPage() {
   const { user } = useAuth();
@@ -9,6 +11,13 @@ export default function InboxPage() {
   const [body, setBody] = useState('');
   const [quoteState, setQuoteState] = useState({ title: '', description: '', amount: '' });
   const [status, setStatus] = useState('');
+
+  const loadConversations = useCallback(async () => {
+    const data = await apiRequest('/conversations');
+
+    setConversations(data.conversations);
+    setSelectedId((current) => current ?? data.conversations[0]?.id ?? null);
+  }, []);
 
   useEffect(() => {
     let cancelled = false;
@@ -40,8 +49,29 @@ export default function InboxPage() {
     [conversations, selectedId],
   );
 
+  const markConversationRead = useCallback(async (conversationId) => {
+    try {
+      await apiRequest(`/conversations/${conversationId}/read`, { method: 'PATCH' });
+      await loadConversations();
+    } catch {
+      // Silent fail to avoid blocking chat interactions.
+    }
+  }, [loadConversations]);
+
+  const handleSelectConversation = async (conversation) => {
+    setSelectedId(conversation.id);
+
+    if (conversation.unread_messages_count > 0) {
+      await markConversationRead(conversation.id);
+    }
+  };
+
   const sendMessage = async (event) => {
     event.preventDefault();
+
+    if (!selectedId || !body.trim()) {
+      return;
+    }
 
     try {
       await apiRequest(`/conversations/${selectedId}/messages`, {
@@ -49,8 +79,8 @@ export default function InboxPage() {
         body: { body },
       });
       setBody('');
-      const data = await apiRequest('/conversations');
-      setConversations(data.conversations);
+      setStatus('');
+      await loadConversations();
     } catch (err) {
       setStatus(err.message);
     }
@@ -76,6 +106,7 @@ export default function InboxPage() {
       });
       setQuoteState({ title: '', description: '', amount: '' });
       setStatus('Devis envoye.');
+      await loadConversations();
     } catch (err) {
       setStatus(err.message);
     }
@@ -93,10 +124,17 @@ export default function InboxPage() {
         body: { status: statusValue },
       });
       setStatus(`Devis ${statusValue}.`);
+      await loadConversations();
     } catch (err) {
       setStatus(err.message);
     }
   };
+
+  const selectedPeer = selectedConversation
+    ? user.id === selectedConversation.client_id
+      ? selectedConversation.artisan
+      : selectedConversation.client
+    : null;
 
   return (
     <section className="content-grid inbox-layout">
@@ -108,14 +146,30 @@ export default function InboxPage() {
 
         {conversations.map((conversation) => {
           const peer = user.id === conversation.client_id ? conversation.artisan : conversation.client;
+          const lastMessage = conversation.messages?.[conversation.messages.length - 1];
+
           return (
             <button
               key={conversation.id}
               className={`conversation-item ${conversation.id === selectedId ? 'active' : ''}`}
-              onClick={() => setSelectedId(conversation.id)}
+              onClick={() => handleSelectConversation(conversation)}
             >
-              <strong>{peer.name}</strong>
-              <span>{peer.city || 'Maroc'}</span>
+              <div className="conversation-row">
+                <img src={buildAvatarUrl(peer)} alt={peer.name} className="avatar-sm" />
+                <div>
+                  <strong>{peer.name}</strong>
+                  <span>{formatRole(peer.role)}</span>
+                </div>
+              </div>
+
+              <small>{lastMessage?.body || 'Commencez la conversation'}</small>
+
+              <div className="conversation-row">
+                <span>{lastMessage?.created_at ? formatDateTime(lastMessage.created_at) : 'Maintenant'}</span>
+                {conversation.unread_messages_count > 0 ? (
+                  <span className="notification-badge">{conversation.unread_messages_count}</span>
+                ) : null}
+              </div>
             </button>
           );
         })}
@@ -124,14 +178,30 @@ export default function InboxPage() {
       <div className="stack-layout">
         <div className="panel messages-panel">
           <div className="panel-heading">
-            <h3>Messagerie</h3>
-            {status ? <p>{status}</p> : <p>Parle comme dans une vraie relation client-artisan.</p>}
+            <div>
+              <h3>Messagerie</h3>
+              <p>{status || 'Un chat clair pour convertir en devis rapidement.'}</p>
+            </div>
+
+            {selectedPeer ? (
+              <div className="chat-peer-card">
+                <img src={buildAvatarUrl(selectedPeer)} alt={selectedPeer.name} className="avatar-sm" />
+                <div>
+                  <strong>{selectedPeer.name}</strong>
+                  <small>{selectedPeer.city || 'Maroc'}</small>
+                </div>
+              </div>
+            ) : null}
           </div>
 
           <div className="message-thread">
             {selectedConversation?.messages?.map((message) => (
               <article key={message.id} className={`message-bubble ${message.sender_id === user.id ? 'mine' : ''}`}>
-                <strong>{message.sender.name}</strong>
+                <div className="message-author">
+                  <img src={buildAvatarUrl(message.sender)} alt={message.sender.name} className="avatar-xs" />
+                  <strong>{message.sender.name}</strong>
+                  <small>{formatDateTime(message.created_at)}</small>
+                </div>
                 <p>{message.body}</p>
               </article>
             ))}
@@ -139,7 +209,9 @@ export default function InboxPage() {
 
           <form className="inline-form" onSubmit={sendMessage}>
             <input value={body} onChange={(e) => setBody(e.target.value)} placeholder="Ecrire un message..." />
-            <button className="primary-button">Envoyer</button>
+            <button className="primary-button" disabled={!selectedConversation || !body.trim()}>
+              Envoyer
+            </button>
           </form>
         </div>
 
@@ -147,7 +219,7 @@ export default function InboxPage() {
           <form className="panel form-panel" onSubmit={sendQuote}>
             <div className="panel-heading">
               <h3>Envoyer un devis</h3>
-              <p>Transforme une conversation en proposition concrete.</p>
+              <p>Transforme la discussion en proposition professionnelle.</p>
             </div>
             <label>
               Titre
@@ -171,7 +243,7 @@ export default function InboxPage() {
           <div className="panel form-panel">
             <div className="panel-heading">
               <h3>Decision client</h3>
-              <p>Accepte ou refuse le devis quand il arrive.</p>
+              <p>Accepte ou refuse rapidement le dernier devis recu.</p>
             </div>
             <div className="card-actions">
               <button className="primary-button" onClick={() => updateQuoteStatus('accepted')}>
