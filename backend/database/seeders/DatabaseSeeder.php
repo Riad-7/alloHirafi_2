@@ -30,6 +30,7 @@ class DatabaseSeeder extends Seeder
             'role' => 'client',
             'city' => 'Agadir',
             'phone' => '0600000001',
+            'avatar' => 'https://images.unsplash.com/photo-1487412720507-e7ab37603c6f?auto=format&fit=crop&w=400&q=80',
         ]);
 
         $artisanOneUser = User::create([
@@ -39,6 +40,7 @@ class DatabaseSeeder extends Seeder
             'role' => 'artisan',
             'city' => 'Agadir',
             'phone' => '0600000002',
+            'avatar' => 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=400&q=80',
         ]);
 
         $artisanTwoUser = User::create([
@@ -48,6 +50,7 @@ class DatabaseSeeder extends Seeder
             'role' => 'artisan',
             'city' => 'Marrakech',
             'phone' => '0600000003',
+            'avatar' => 'https://images.unsplash.com/photo-1544723795-3fb6469f5b39?auto=format&fit=crop&w=400&q=80',
         ]);
 
         $artisanOne = Artisan::create([
