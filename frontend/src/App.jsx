@@ -5,6 +5,7 @@ import AuthPage from './pages/AuthPage.jsx';
 import DashboardPage from './pages/DashboardPage.jsx';
 import HomePage from './pages/HomePage.jsx';
 import InboxPage from './pages/InboxPage.jsx';
+import ProfilePage from './pages/ProfilePage.jsx';
 import SearchPage from './pages/SearchPage.jsx';
 
 function ProtectedRoute({ children }) {
@@ -40,6 +41,14 @@ export default function App() {
           element={
             <ProtectedRoute>
               <InboxPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/profile"
+          element={
+            <ProtectedRoute>
+              <ProfilePage />
             </ProtectedRoute>
           }
         />
