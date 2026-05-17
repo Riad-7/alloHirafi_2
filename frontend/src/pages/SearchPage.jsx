@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import ArtisanCard from '../components/ArtisanCard.jsx';
 import { useAuth } from '../context/AuthContext.jsx';
 import { apiRequest } from '../services/api.js';
+import { buildAvatarUrl } from '../utils/userPresentation.js';
 
 export default function SearchPage() {
   const { user } = useAuth();
@@ -17,10 +18,7 @@ export default function SearchPage() {
 
     const bootstrap = async () => {
       try {
-        const [artisansData, postsData] = await Promise.all([
-          apiRequest('/artisans'),
-          apiRequest('/posts'),
-        ]);
+        const [artisansData, postsData] = await Promise.all([apiRequest('/artisans'), apiRequest('/posts')]);
 
         if (!cancelled) {
           setArtisans(artisansData.artisans);
@@ -45,7 +43,12 @@ export default function SearchPage() {
     setMessage('');
 
     try {
-      const data = await apiRequest(`/artisans?metier=${filters.metier}&ville=${filters.ville}&note=${filters.note}`);
+      const params = new URLSearchParams({
+        metier: filters.metier,
+        ville: filters.ville,
+        note: filters.note,
+      });
+      const data = await apiRequest(`/artisans?${params.toString()}`);
       setArtisans(data.artisans);
     } catch (err) {
       setMessage(err.message);
@@ -154,10 +157,16 @@ export default function SearchPage() {
           <div className="mini-post-list">
             {posts.map((post) => (
               <article key={post.id} className="mini-post">
-                <strong>{post.title}</strong>
-                <span>{post.artisan.user.name}</span>
+                <div className="mini-post-head">
+                  <img src={buildAvatarUrl(post.artisan.user)} alt={post.artisan.user.name} className="avatar-xs" />
+                  <div>
+                    <strong>{post.title}</strong>
+                    <span>{post.artisan.user.name}</span>
+                  </div>
+                </div>
+                {post.images?.[0]?.image_url ? <img src={post.images[0].image_url} alt={post.title} className="mini-post-cover" /> : null}
                 <small>
-                  {post.city} · {post.price_from} - {post.price_to} DH
+                  {post.city} - {post.price_from} - {post.price_to} DH
                 </small>
               </article>
             ))}
@@ -167,3 +176,4 @@ export default function SearchPage() {
     </section>
   );
 }
+
