@@ -8,13 +8,13 @@ import InboxPage from './pages/InboxPage.jsx';
 import SearchPage from './pages/SearchPage.jsx';
 
 function ProtectedRoute({ children }) {
-  const { token, booting } = useAuth();
+  const { user, booting } = useAuth();
 
   if (booting) {
     return <div className="shell-loader">Chargement...</div>;
   }
 
-  if (!token) {
+  if (!user) {
     return <Navigate to="/auth" replace />;
   }
 
