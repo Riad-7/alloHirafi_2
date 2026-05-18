@@ -17,6 +17,7 @@ class Artisan extends Model
         'service_radius_km',
         'is_available',
         'average_rating',
+        'is_verified',
     ];
 
     protected function casts(): array
