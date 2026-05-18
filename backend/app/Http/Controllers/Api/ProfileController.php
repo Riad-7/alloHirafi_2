@@ -28,7 +28,7 @@ class ProfileController extends Controller
             'email' => ['required', 'string', 'email', 'max:255', Rule::unique('users', 'email')->ignore($user->id)],
             'city' => ['nullable', 'string', 'max:120'],
             'phone' => ['nullable', 'string', 'max:50'],
-            'avatar' => ['nullable', 'url', 'max:2048'],
+            'avatar' => ['nullable', 'image', 'mimes:jpeg,png,jpg,gif,webp', 'max:4096'],
             'artisan_profile.craft' => [$user->role === 'artisan' ? 'required' : 'nullable', 'string', 'max:120'],
             'artisan_profile.bio' => ['nullable', 'string'],
             'artisan_profile.hourly_rate' => ['nullable', 'numeric', 'min:0'],
@@ -37,12 +37,17 @@ class ProfileController extends Controller
             'artisan_profile.is_available' => ['nullable', 'boolean'],
         ]);
 
+        $avatarPath = $user->avatar;
+        if ($request->hasFile('avatar')) {
+            $avatarPath = config('app.url') . '/storage/' . $request->file('avatar')->store('avatars', 'public');
+        }
+
         $user->update([
             'name' => $data['name'],
             'email' => $data['email'],
             'city' => $data['city'] ?? null,
             'phone' => $data['phone'] ?? null,
-            'avatar' => $data['avatar'] ?? null,
+            'avatar' => $avatarPath,
         ]);
 
         if ($user->role === 'artisan' && isset($data['artisan_profile'])) {
