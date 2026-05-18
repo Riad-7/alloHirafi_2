@@ -3,7 +3,7 @@
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
-use App\Http\Controllers\Api\{ArtisanController, ConversationController, DashboardController, NotificationController, PostController, ProfileController, QuoteController, ReviewController, SearchController};
+use App\Http\Controllers\Api\{AdminController, ArtisanController, ConversationController, DashboardController, NotificationController, PostController, ProfileController, QuoteController, ReviewController, SearchController};
 use App\Support\AuthUserPayload;
 
 Route::get('/artisans', [ArtisanController::class, 'index']);
@@ -25,6 +25,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/profile', [ProfileController::class, 'show']);
     Route::patch('/profile', [ProfileController::class, 'update']);
     Route::patch('/profile/password', [ProfileController::class, 'updatePassword']);
+    Route::post('/profile/verify', [ArtisanController::class, 'requestVerification']);
 
     Route::post('/posts', [PostController::class, 'store']);
 
@@ -40,4 +41,17 @@ Route::middleware('auth:sanctum')->group(function () {
 
     Route::get('/notifications', [NotificationController::class, 'index']);
     Route::patch('/notifications/{notification}/read', [NotificationController::class, 'markAsRead']);
+
+    // Admin routes
+    Route::middleware(['admin'])->prefix('admin')->group(function () {
+        Route::get('/stats', [AdminController::class, 'stats']);
+        Route::get('/verifications/pending', function (Request $request) {
+            $request->merge(['status' => 'pending']);
+            return app(AdminController::class)->verifications($request);
+        });
+        Route::get('/verifications', [AdminController::class, 'verifications']);
+        Route::get('/verifications/{verification}/document', [AdminController::class, 'showDocument']);
+        Route::post('/verifications/{verification}/approve', [AdminController::class, 'approve']);
+        Route::post('/verifications/{verification}/reject', [AdminController::class, 'reject']);
+    });
 });

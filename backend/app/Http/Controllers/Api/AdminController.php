@@ -15,16 +15,11 @@ class AdminController extends Controller
     /**
      * Admin dashboard statistics.
      */
-    public function dashboard(): JsonResponse
+    public function stats(): JsonResponse
     {
         return response()->json([
-            'stats' => [
-                'total_artisans' => Artisan::count(),
-                'verified_artisans' => Artisan::where('is_verified', true)->count(),
-                'pending_requests' => VerificationRequest::where('status', 'pending')->count(),
-                'approved_requests' => VerificationRequest::where('status', 'approved')->count(),
-                'rejected_requests' => VerificationRequest::where('status', 'rejected')->count(),
-            ],
+            'total_artisans' => Artisan::count(),
+            'pending_verifications' => VerificationRequest::where('status', 'pending')->count(),
         ]);
     }
 
@@ -33,13 +28,11 @@ class AdminController extends Controller
      */
     public function verifications(Request $request): JsonResponse
     {
-        $query = VerificationRequest::with(['user.artisanProfile', 'reviewer'])
+        $query = VerificationRequest::with(['user', 'reviewer'])
             ->when($request->filled('status'), fn ($q) => $q->where('status', $request->input('status')))
             ->latest();
 
-        return response()->json([
-            'verifications' => $query->get(),
-        ]);
+        return response()->json($query->get());
     }
 
     /**
@@ -89,7 +82,7 @@ class AdminController extends Controller
 
         return response()->json([
             'message' => 'Artisan verifie avec succes.',
-            'verification' => $verification->fresh(['user.artisanProfile', 'reviewer']),
+            'verification' => $verification->fresh(['user', 'reviewer']),
         ]);
     }
 
@@ -105,19 +98,19 @@ class AdminController extends Controller
         }
 
         $data = $request->validate([
-            'admin_notes' => ['nullable', 'string', 'max:1000'],
+            'note' => ['nullable', 'string', 'max:1000'],
         ]);
 
         $verification->update([
             'status' => 'rejected',
             'reviewed_by' => $request->user()->id,
             'reviewed_at' => now(),
-            'admin_notes' => $data['admin_notes'] ?? null,
+            'admin_notes' => $data['note'] ?? null,
         ]);
 
         return response()->json([
             'message' => 'Demande rejetee.',
-            'verification' => $verification->fresh(['user.artisanProfile', 'reviewer']),
+            'verification' => $verification->fresh(['user', 'reviewer']),
         ]);
     }
 }
