@@ -6,7 +6,9 @@ import { buildAvatarUrl, formatRole } from '../utils/userPresentation.js';
 
 export default function Layout() {
   const { user, logout } = useAuth();
-  const [unreadNotifications, setUnreadNotifications] = useState(0);
+  const [notifications, setNotifications] = useState([]);
+  const [showNotifications, setShowNotifications] = useState(false);
+  const unreadCount = notifications.filter(n => !n.read_at).length;
 
   useEffect(() => {
     let cancelled = false;
@@ -24,11 +26,11 @@ export default function Layout() {
         const data = await apiRequest('/notifications');
 
         if (!cancelled) {
-          setUnreadNotifications(data.unread_count ?? 0);
+          setNotifications(data.notifications || []);
         }
       } catch {
         if (!cancelled) {
-          setUnreadNotifications(0);
+          setNotifications([]);
         }
       }
     };
@@ -47,6 +49,17 @@ export default function Layout() {
     };
   }, [user]);
 
+  const markNotificationRead = async (notificationId) => {
+    try {
+      await apiRequest(`/notifications/${notificationId}/read`, {
+        method: 'PATCH',
+      });
+      setNotifications(notifications.map(n => n.id === notificationId ? { ...n, read_at: new Date().toISOString() } : n));
+    } catch {
+      // ignore
+    }
+  };
+
   return (
     <div className="app-shell">
       <header className="topbar">
@@ -64,7 +77,6 @@ export default function Layout() {
           <NavLink to="/dashboard">Dashboard</NavLink>
           <NavLink to="/inbox" className="inbox-link">
             Inbox
-            {unreadNotifications > 0 ? <span className="notification-badge">{unreadNotifications}</span> : null}
           </NavLink>
           <NavLink to="/profile">Profil</NavLink>
         </nav>
@@ -72,6 +84,45 @@ export default function Layout() {
         <div className="topbar-actions">
           {user ? (
             <>
+              <div className="notification-wrapper">
+                <button 
+                  className="icon-button" 
+                  onClick={() => setShowNotifications(!showNotifications)}
+                  aria-label="Notifications"
+                >
+                  <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/></svg>
+                  {unreadCount > 0 ? <span className="notification-badge">{unreadCount}</span> : null}
+                </button>
+
+                {showNotifications && (
+                  <div className="notification-dropdown">
+                    <div className="notification-dropdown-header">
+                      <h4>Notifications</h4>
+                      <span>{unreadCount} non lues</span>
+                    </div>
+                    <div className="notification-dropdown-body">
+                      {notifications.length === 0 ? (
+                        <p className="no-notifications">Aucune notification</p>
+                      ) : (
+                        notifications.map((notification) => (
+                          <div key={notification.id} className={`dropdown-notification-item ${notification.read_at ? 'read' : 'unread'}`}>
+                            <div className="notif-content">
+                              <strong>{notification.title}</strong>
+                              <p>{notification.body}</p>
+                            </div>
+                            {!notification.read_at && (
+                              <button className="ghost-button-sm" onClick={() => markNotificationRead(notification.id)}>
+                                Lu
+                              </button>
+                            )}
+                          </div>
+                        ))
+                      )}
+                    </div>
+                  </div>
+                )}
+              </div>
+
               <div className="user-pill">
                 <img src={buildAvatarUrl(user)} alt={user.name} className="avatar-sm" />
                 <div>

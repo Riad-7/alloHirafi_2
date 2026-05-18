@@ -59,7 +59,7 @@ async function requestJson(url, options = {}) {
     ...(options.headers ?? {}),
   };
 
-  if (options.body !== undefined && !headers['Content-Type']) {
+  if (options.body !== undefined && !headers['Content-Type'] && !(options.body instanceof FormData)) {
     headers['Content-Type'] = 'application/json';
   }
 
@@ -73,7 +73,7 @@ async function requestJson(url, options = {}) {
     method,
     credentials: 'include',
     headers,
-    body: options.body !== undefined ? JSON.stringify(options.body) : undefined,
+    body: options.body !== undefined ? (options.body instanceof FormData ? options.body : JSON.stringify(options.body)) : undefined,
   });
 
   const text = await response.text();

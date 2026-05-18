@@ -33,14 +33,24 @@ class PostController extends Controller
             'price_from' => ['nullable', 'numeric', 'min:0'],
             'price_to' => ['nullable', 'numeric', 'min:0'],
             'available_at' => ['nullable', 'date'],
-            'images' => ['nullable', 'array'],
-            'images.*' => ['url'],
+            'images' => ['nullable', 'array', 'max:5'],
+            'images.*' => ['image', 'mimes:jpeg,png,jpg,webp', 'max:4096'],
         ]);
 
-        $post = $user->artisanProfile->posts()->create($data);
+        $post = $user->artisanProfile->posts()->create([
+            'title' => $data['title'],
+            'description' => $data['description'],
+            'city' => $data['city'],
+            'price_from' => $data['price_from'] ?? null,
+            'price_to' => $data['price_to'] ?? null,
+            'available_at' => $data['available_at'] ?? null,
+        ]);
 
-        foreach ($data['images'] ?? [] as $imageUrl) {
-            $post->images()->create(['image_url' => $imageUrl]);
+        if ($request->hasFile('images')) {
+            foreach ($request->file('images') as $image) {
+                $path = config('app.url') . '/storage/' . $image->store('posts', 'public');
+                $post->images()->create(['image_url' => $path]);
+            }
         }
 
         return response()->json([

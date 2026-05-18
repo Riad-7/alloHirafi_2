@@ -10,19 +10,16 @@ import { buildAvatarUrl } from '../utils/userPresentation.js';
 export default function DashboardPage() {
   const { user } = useAuth();
   const [dashboard, setDashboard] = useState(null);
-  const [notifications, setNotifications] = useState([]);
   const [artisans, setArtisans] = useState([]);
   const [status, setStatus] = useState('');
 
   const load = async () => {
-    const [dashboardData, notificationsData, artisansData] = await Promise.all([
+    const [dashboardData, artisansData] = await Promise.all([
       apiRequest('/dashboard'),
-      apiRequest('/notifications'),
       apiRequest('/artisans'),
     ]);
 
     setDashboard(dashboardData);
-    setNotifications(notificationsData.notifications);
     setArtisans(artisansData.artisans);
   };
 
@@ -31,15 +28,13 @@ export default function DashboardPage() {
 
     const bootstrap = async () => {
       try {
-        const [dashboardData, notificationsData, artisansData] = await Promise.all([
+        const [dashboardData, artisansData] = await Promise.all([
           apiRequest('/dashboard'),
-          apiRequest('/notifications'),
           apiRequest('/artisans'),
         ]);
 
         if (!cancelled) {
           setDashboard(dashboardData);
-          setNotifications(notificationsData.notifications);
           setArtisans(artisansData.artisans);
         }
       } catch (err) {
@@ -69,12 +64,7 @@ export default function DashboardPage() {
     }
   };
 
-  const markNotificationRead = async (notificationId) => {
-    await apiRequest(`/notifications/${notificationId}/read`, {
-      method: 'PATCH',
-    });
-    await load();
-  };
+
 
   const leaveReview = async (artisan) => {
     try {
@@ -118,7 +108,7 @@ export default function DashboardPage() {
       </div>
 
       <div className="content-grid">
-        <div className="stack-layout">
+        <div className="stack-layout full-width">
           {user?.role === 'artisan' ? <PostComposer onSubmit={publishPost} /> : null}
 
           {user?.role === 'client' ? (
@@ -135,30 +125,6 @@ export default function DashboardPage() {
             </div>
           ) : null}
         </div>
-
-        <aside className="panel">
-          <div className="panel-heading">
-            <h3>Notifications</h3>
-            <p>{notifications.filter((notification) => !notification.read_at).length} non lues</p>
-          </div>
-          <div className="notification-list">
-            {notifications.map((notification) => (
-              <article key={notification.id} className={`notification-item ${notification.read_at ? 'read' : 'unread'}`}>
-                <div className="conversation-row">
-                  <strong>{notification.title}</strong>
-                  {!notification.read_at ? <span className="notification-badge">New</span> : null}
-                </div>
-                <p>{notification.body}</p>
-                <small>{formatDateTime(notification.created_at)}</small>
-                {!notification.read_at ? (
-                  <button className="ghost-button" onClick={() => markNotificationRead(notification.id)}>
-                    Marquer lu
-                  </button>
-                ) : null}
-              </article>
-            ))}
-          </div>
-        </aside>
       </div>
     </section>
   );

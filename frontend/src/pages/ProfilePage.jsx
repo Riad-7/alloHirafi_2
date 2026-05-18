@@ -10,6 +10,7 @@ function buildProfileForm(user) {
     city: user?.city || '',
     phone: user?.phone || '',
     avatar: user?.avatar || '',
+    avatarFile: null,
     artisan_profile: {
       craft: user?.artisan_profile?.craft || '',
       bio: user?.artisan_profile?.bio || '',
@@ -46,10 +47,10 @@ export default function ProfilePage() {
     sync();
   }, [refreshUser]);
 
-  const avatarPreview = useMemo(
-    () => (form.avatar?.trim() ? form.avatar : buildAvatarUrl({ name: form.name || user?.name || 'User' })),
-    [form.avatar, form.name, user?.name],
-  );
+  const avatarPreview = useMemo(() => {
+    if (form.avatarFile) return URL.createObjectURL(form.avatarFile);
+    return form.avatar?.trim() ? form.avatar : buildAvatarUrl({ name: form.name || user?.name || 'User' });
+  }, [form.avatarFile, form.avatar, form.name, user?.name]);
 
   const updateProfile = async (event) => {
     event.preventDefault();
@@ -58,28 +59,26 @@ export default function ProfilePage() {
     setStatus('');
 
     try {
-      const payload = {
-        name: form.name,
-        email: form.email,
-        city: form.city,
-        phone: form.phone,
-        avatar: form.avatar || null,
-      };
+      const formData = new FormData();
+      formData.append('_method', 'PATCH'); // Laravel requires _method=PATCH for FormData
+      formData.append('name', form.name);
+      formData.append('email', form.email);
+      if (form.city) formData.append('city', form.city);
+      if (form.phone) formData.append('phone', form.phone);
+      if (form.avatarFile) formData.append('avatar', form.avatarFile);
 
       if (user?.role === 'artisan') {
-        payload.artisan_profile = {
-          craft: form.artisan_profile.craft,
-          bio: form.artisan_profile.bio,
-          hourly_rate: form.artisan_profile.hourly_rate || null,
-          years_experience: form.artisan_profile.years_experience || null,
-          service_radius_km: form.artisan_profile.service_radius_km || null,
-          is_available: !!form.artisan_profile.is_available,
-        };
+        formData.append('artisan_profile[craft]', form.artisan_profile.craft);
+        if (form.artisan_profile.bio) formData.append('artisan_profile[bio]', form.artisan_profile.bio);
+        if (form.artisan_profile.hourly_rate) formData.append('artisan_profile[hourly_rate]', form.artisan_profile.hourly_rate);
+        if (form.artisan_profile.years_experience) formData.append('artisan_profile[years_experience]', form.artisan_profile.years_experience);
+        if (form.artisan_profile.service_radius_km) formData.append('artisan_profile[service_radius_km]', form.artisan_profile.service_radius_km);
+        formData.append('artisan_profile[is_available]', form.artisan_profile.is_available ? '1' : '0');
       }
 
       await apiRequest('/profile', {
-        method: 'PATCH',
-        body: payload,
+        method: 'POST', // Use POST with _method=PATCH for multipart/form-data in Laravel
+        body: formData,
       });
 
       await refreshUser();
@@ -160,8 +159,8 @@ export default function ProfilePage() {
               <input value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value })} />
             </label>
             <label className="profile-full-row">
-              URL image profile
-              <input value={form.avatar} onChange={(e) => setForm({ ...form, avatar: e.target.value })} placeholder="https://..." />
+              Image de profil
+              <input type="file" accept="image/*" onChange={(e) => setForm({ ...form, avatarFile: e.target.files[0] })} />
             </label>
           </div>
 

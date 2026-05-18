@@ -215,7 +215,36 @@ export default function InboxPage() {
           </form>
         </div>
 
-        {user.role === 'artisan' ? (
+        {selectedConversation?.quotes?.[0] ? (
+          <div className="panel quote-card">
+            <div className="panel-heading quote-header">
+              <h3>Devis: {selectedConversation.quotes[0].title}</h3>
+              <span className={`status-badge status-${selectedConversation.quotes[0].status}`}>
+                {selectedConversation.quotes[0].status === 'pending' ? 'En attente' : selectedConversation.quotes[0].status === 'accepted' ? 'Accepte' : 'Refuse'}
+              </span>
+            </div>
+            <div className="quote-body">
+              <p>{selectedConversation.quotes[0].description || 'Aucune description detaillee.'}</p>
+              <div className="quote-amount-row">
+                <span>Montant propose</span>
+                <strong>{selectedConversation.quotes[0].amount} DH</strong>
+              </div>
+            </div>
+            
+            {user.role === 'client' && selectedConversation.quotes[0].status === 'pending' ? (
+              <div className="quote-actions">
+                <button className="primary-button" onClick={() => updateQuoteStatus('accepted')}>
+                  Accepter le devis
+                </button>
+                <button className="ghost-button" onClick={() => updateQuoteStatus('rejected')}>
+                  Refuser
+                </button>
+              </div>
+            ) : null}
+          </div>
+        ) : null}
+
+        {user.role === 'artisan' && (!selectedConversation?.quotes?.[0] || selectedConversation.quotes[0].status !== 'pending') ? (
           <form className="panel form-panel" onSubmit={sendQuote}>
             <div className="panel-heading">
               <h3>Envoyer un devis</h3>
@@ -223,11 +252,11 @@ export default function InboxPage() {
             </div>
             <label>
               Titre
-              <input value={quoteState.title} onChange={(e) => setQuoteState({ ...quoteState, title: e.target.value })} />
+              <input value={quoteState.title} onChange={(e) => setQuoteState({ ...quoteState, title: e.target.value })} required />
             </label>
             <label>
-              Montant
-              <input value={quoteState.amount} onChange={(e) => setQuoteState({ ...quoteState, amount: e.target.value })} />
+              Montant (DH)
+              <input type="number" min="1" value={quoteState.amount} onChange={(e) => setQuoteState({ ...quoteState, amount: e.target.value })} required />
             </label>
             <label>
               Description
@@ -237,24 +266,9 @@ export default function InboxPage() {
                 onChange={(e) => setQuoteState({ ...quoteState, description: e.target.value })}
               />
             </label>
-            <button className="ghost-button">Envoyer le devis</button>
+            <button className="primary-button">Envoyer le devis</button>
           </form>
-        ) : (
-          <div className="panel form-panel">
-            <div className="panel-heading">
-              <h3>Decision client</h3>
-              <p>Accepte ou refuse rapidement le dernier devis recu.</p>
-            </div>
-            <div className="card-actions">
-              <button className="primary-button" onClick={() => updateQuoteStatus('accepted')}>
-                Accepter
-              </button>
-              <button className="ghost-button" onClick={() => updateQuoteStatus('rejected')}>
-                Refuser
-              </button>
-            </div>
-          </div>
-        )}
+        ) : null}
       </div>
     </section>
   );
