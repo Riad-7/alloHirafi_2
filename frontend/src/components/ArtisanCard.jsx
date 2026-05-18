@@ -26,9 +26,11 @@ export default function ArtisanCard({ artisan, onContact, onReview }) {
         <div className="artisan-card-top">
           <div className="artisan-identity">
             <img src={buildAvatarUrl(artisan.user)} alt={artisan.user.name} className="avatar-md" />
-            <div>
+            <div className="artisan-name-wrapper">
               <h3>{artisan.user.name}</h3>
-              <p className="artisan-craft">{artisan.craft}</p>
+              {artisan.is_verified ? (
+                <svg className="verified-badge" xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="#3b82f6" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"></circle><polyline points="9 11 12 14 15 9"></polyline></svg>
+              ) : null}
             </div>
           </div>
           <div className="rating-badge">
