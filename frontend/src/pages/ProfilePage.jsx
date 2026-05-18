@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useAuth } from '../context/AuthContext.jsx';
+import { useToast } from '../context/ToastContext.jsx';
 import { apiRequest } from '../services/api.js';
 import { buildAvatarUrl, formatRole } from '../utils/userPresentation.js';
 
@@ -24,14 +25,13 @@ function buildProfileForm(user) {
 
 export default function ProfilePage() {
   const { user, refreshUser } = useAuth();
+  const toast = useToast();
   const [form, setForm] = useState(buildProfileForm(user));
   const [passwordForm, setPasswordForm] = useState({
     current_password: '',
     password: '',
     password_confirmation: '',
   });
-  const [status, setStatus] = useState('');
-  const [error, setError] = useState('');
   const [busy, setBusy] = useState(false);
   const [passwordBusy, setPasswordBusy] = useState(false);
 
@@ -55,8 +55,6 @@ export default function ProfilePage() {
   const updateProfile = async (event) => {
     event.preventDefault();
     setBusy(true);
-    setError('');
-    setStatus('');
 
     try {
       const formData = new FormData();
@@ -82,9 +80,9 @@ export default function ProfilePage() {
       });
 
       await refreshUser();
-      setStatus('Profil mis a jour avec succes.');
+      toast.success('Profil mis a jour avec succes.');
     } catch (err) {
-      setError(err.message);
+      toast.error(err.message || 'Erreur lors de la mise a jour');
     } finally {
       setBusy(false);
     }
@@ -93,8 +91,6 @@ export default function ProfilePage() {
   const updatePassword = async (event) => {
     event.preventDefault();
     setPasswordBusy(true);
-    setError('');
-    setStatus('');
 
     try {
       await apiRequest('/profile/password', {
@@ -107,9 +103,9 @@ export default function ProfilePage() {
         password: '',
         password_confirmation: '',
       });
-      setStatus('Mot de passe mis a jour.');
+      toast.success('Mot de passe mis a jour.');
     } catch (err) {
-      setError(err.message);
+      toast.error(err.message || 'Erreur lors du changement de mot de passe');
     } finally {
       setPasswordBusy(false);
     }
@@ -130,9 +126,6 @@ export default function ProfilePage() {
         </div>
         <div className="status-pill">Compte securise</div>
       </div>
-
-      {status ? <div className="panel success-box">{status}</div> : null}
-      {error ? <div className="panel error-box">{error}</div> : null}
 
       <div className="two-column profile-columns">
         <form className="panel form-panel" onSubmit={updateProfile}>

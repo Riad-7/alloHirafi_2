@@ -1,16 +1,17 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useAuth } from '../context/AuthContext.jsx';
+import { useToast } from '../context/ToastContext.jsx';
 import { apiRequest } from '../services/api.js';
 import { formatDateTime } from '../utils/date.js';
 import { buildAvatarUrl, formatRole } from '../utils/userPresentation.js';
 
 export default function InboxPage() {
   const { user } = useAuth();
+  const toast = useToast();
   const [conversations, setConversations] = useState([]);
   const [selectedId, setSelectedId] = useState(null);
   const [body, setBody] = useState('');
   const [quoteState, setQuoteState] = useState({ title: '', description: '', amount: '' });
-  const [status, setStatus] = useState('');
 
   const loadConversations = useCallback(async () => {
     const data = await apiRequest('/conversations');
@@ -32,7 +33,7 @@ export default function InboxPage() {
         }
       } catch (err) {
         if (!cancelled) {
-          setStatus(err.message);
+          toast.error(err.message || 'Erreur de chargement des conversations');
         }
       }
     };
@@ -79,10 +80,9 @@ export default function InboxPage() {
         body: { body },
       });
       setBody('');
-      setStatus('');
       await loadConversations();
     } catch (err) {
-      setStatus(err.message);
+      toast.error(err.message || 'Erreur d\'envoi');
     }
   };
 
@@ -105,16 +105,16 @@ export default function InboxPage() {
         },
       });
       setQuoteState({ title: '', description: '', amount: '' });
-      setStatus('Devis envoye.');
+      toast.success('Devis envoye.');
       await loadConversations();
     } catch (err) {
-      setStatus(err.message);
+      toast.error(err.message || 'Erreur lors de l\'envoi du devis');
     }
   };
 
   const updateQuoteStatus = async (statusValue) => {
     if (!selectedConversation?.quotes?.[0]) {
-      setStatus('Aucun devis dans cette conversation.');
+      toast.error('Aucun devis dans cette conversation.');
       return;
     }
 
@@ -123,10 +123,10 @@ export default function InboxPage() {
         method: 'PATCH',
         body: { status: statusValue },
       });
-      setStatus(`Devis ${statusValue}.`);
+      toast.success(`Devis ${statusValue === 'accepted' ? 'accepte' : 'refuse'}.`);
       await loadConversations();
     } catch (err) {
-      setStatus(err.message);
+      toast.error(err.message || 'Erreur lors de la mise a jour du devis');
     }
   };
 
@@ -144,35 +144,42 @@ export default function InboxPage() {
           <p>{conversations.length} fils actifs</p>
         </div>
 
-        {conversations.map((conversation) => {
-          const peer = user.id === conversation.client_id ? conversation.artisan : conversation.client;
-          const lastMessage = conversation.messages?.[conversation.messages.length - 1];
+        {conversations.length === 0 ? (
+          <div className="empty-state">
+            <svg xmlns="http://www.w3.org/2000/svg" width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" style={{ opacity: 0.5, marginBottom: '0.8rem' }}><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path></svg>
+            <p>Aucune conversation</p>
+          </div>
+        ) : (
+          conversations.map((conversation) => {
+            const peer = user.id === conversation.client_id ? conversation.artisan : conversation.client;
+            const lastMessage = conversation.messages?.[conversation.messages.length - 1];
 
-          return (
-            <button
-              key={conversation.id}
-              className={`conversation-item ${conversation.id === selectedId ? 'active' : ''}`}
-              onClick={() => handleSelectConversation(conversation)}
-            >
-              <div className="conversation-row">
-                <img src={buildAvatarUrl(peer)} alt={peer.name} className="avatar-sm" />
-                <div>
-                  <strong>{peer.name}</strong>
-                  <span>{formatRole(peer.role)}</span>
+            return (
+              <button
+                key={conversation.id}
+                className={`conversation-item ${conversation.id === selectedId ? 'active' : ''}`}
+                onClick={() => handleSelectConversation(conversation)}
+              >
+                <div className="conversation-row">
+                  <img src={buildAvatarUrl(peer)} alt={peer.name} className="avatar-sm" />
+                  <div>
+                    <strong>{peer.name}</strong>
+                    <span>{formatRole(peer.role)}</span>
+                  </div>
                 </div>
-              </div>
 
-              <small>{lastMessage?.body || 'Commencez la conversation'}</small>
+                <small>{lastMessage?.body || 'Commencez la conversation'}</small>
 
-              <div className="conversation-row">
-                <span>{lastMessage?.created_at ? formatDateTime(lastMessage.created_at) : 'Maintenant'}</span>
-                {conversation.unread_messages_count > 0 ? (
-                  <span className="notification-badge">{conversation.unread_messages_count}</span>
-                ) : null}
-              </div>
-            </button>
-          );
-        })}
+                <div className="conversation-row">
+                  <span>{lastMessage?.created_at ? formatDateTime(lastMessage.created_at) : 'Maintenant'}</span>
+                  {conversation.unread_messages_count > 0 ? (
+                    <span className="notification-badge">{conversation.unread_messages_count}</span>
+                  ) : null}
+                </div>
+              </button>
+            );
+          })
+        )}
       </aside>
 
       <div className="stack-layout">
@@ -180,7 +187,7 @@ export default function InboxPage() {
           <div className="panel-heading">
             <div>
               <h3>Messagerie</h3>
-              <p>{status || 'Un chat clair pour convertir en devis rapidement.'}</p>
+              <p>Un chat clair pour convertir en devis rapidement.</p>
             </div>
 
             {selectedPeer ? (

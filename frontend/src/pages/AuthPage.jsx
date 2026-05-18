@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext.jsx';
+import { useToast } from '../context/ToastContext.jsx';
 
 const registerInitial = {
   name: '',
@@ -17,24 +18,25 @@ const registerInitial = {
 };
 
 export default function AuthPage() {
-  const { login } = useAuth();
+  const { login, register } = useAuth();
   const navigate = useNavigate();
+  const toast = useToast();
+  
   const [mode, setMode] = useState('login');
   const [busy, setBusy] = useState(false);
-  const [error, setError] = useState('');
   const [loginForm, setLoginForm] = useState({ email: 'client@alohirafi.ma', password: 'password' });
   const [registerForm, setRegisterForm] = useState(registerInitial);
 
   const submitLogin = async (event) => {
     event.preventDefault();
-    setError('');
     setBusy(true);
 
     try {
       await login(loginForm, '/login');
+      toast.success('Bienvenue !');
       navigate('/dashboard');
     } catch (err) {
-      setError(err.message);
+      toast.error(err.message || 'Erreur de connexion');
     } finally {
       setBusy(false);
     }
@@ -42,14 +44,14 @@ export default function AuthPage() {
 
   const submitRegister = async (event) => {
     event.preventDefault();
-    setError('');
     setBusy(true);
 
     try {
-      await login(registerForm, '/register');
+      await register(registerForm, '/register');
+      toast.success('Compte cree avec succes !');
       navigate('/dashboard');
     } catch (err) {
-      setError(err.message);
+      toast.error(err.message || 'Erreur lors de l\'inscription');
     } finally {
       setBusy(false);
     }
@@ -84,8 +86,6 @@ export default function AuthPage() {
             Register
           </button>
         </div>
-
-        {error ? <div className="error-box">{error}</div> : null}
 
         {mode === 'login' ? (
           <form className="form-panel auth-form" onSubmit={submitLogin}>
