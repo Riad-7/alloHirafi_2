@@ -48,6 +48,18 @@ class VerificationController extends Controller
             'status' => 'pending',
         ]);
 
+        // Notify all admins
+        $admins = \App\Models\User::where('role', 'admin')->get();
+        foreach ($admins as $admin) {
+            \App\Models\AppNotification::create([
+                'user_id' => $admin->id,
+                'type' => 'verification_request',
+                'title' => 'Nouvelle demande de verification',
+                'body' => "L'artisan {$user->name} a soumis un document pour verification.",
+                'payload' => ['verification_id' => $verification->id],
+            ]);
+        }
+
         return response()->json([
             'message' => 'Document soumis avec succes. Votre demande est en cours de revision.',
             'verification' => $verification,

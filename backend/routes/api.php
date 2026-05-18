@@ -3,7 +3,7 @@
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
-use App\Http\Controllers\Api\{AdminController, ArtisanController, ConversationController, DashboardController, NotificationController, PostController, ProfileController, QuoteController, ReviewController, SearchController};
+use App\Http\Controllers\Api\{AdminController, ArtisanController, ConversationController, DashboardController, NotificationController, PostController, ProfileController, QuoteController, ReviewController, SearchController, VerificationController};
 use App\Support\AuthUserPayload;
 
 Route::get('/artisans', [ArtisanController::class, 'index']);
@@ -25,7 +25,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/profile', [ProfileController::class, 'show']);
     Route::patch('/profile', [ProfileController::class, 'update']);
     Route::patch('/profile/password', [ProfileController::class, 'updatePassword']);
-    Route::post('/profile/verify', [ArtisanController::class, 'requestVerification']);
+    Route::post('/profile/verify', [VerificationController::class, 'store']);
 
     Route::post('/posts', [PostController::class, 'store']);
 
