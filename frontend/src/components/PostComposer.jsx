@@ -7,8 +7,7 @@ const initialState = {
   price_from: '',
   price_to: '',
   available_at: '',
-  image_1: '',
-  image_2: '',
+  imageFiles: [],
 };
 
 export default function PostComposer({ onSubmit }) {
@@ -20,10 +19,19 @@ export default function PostComposer({ onSubmit }) {
     setBusy(true);
 
     try {
-      await onSubmit({
-        ...form,
-        images: [form.image_1, form.image_2].filter(Boolean),
+      const formData = new FormData();
+      formData.append('title', form.title);
+      formData.append('description', form.description);
+      formData.append('city', form.city);
+      if (form.price_from) formData.append('price_from', form.price_from);
+      if (form.price_to) formData.append('price_to', form.price_to);
+      if (form.available_at) formData.append('available_at', form.available_at);
+
+      form.imageFiles.forEach((file) => {
+        formData.append('images[]', file);
       });
+
+      await onSubmit(formData);
       setForm(initialState);
     } finally {
       setBusy(false);
@@ -62,13 +70,14 @@ export default function PostComposer({ onSubmit }) {
             onChange={(e) => setForm({ ...form, available_at: e.target.value })}
           />
         </label>
-        <label>
-          Image 1
-          <input value={form.image_1} onChange={(e) => setForm({ ...form, image_1: e.target.value })} />
-        </label>
-        <label>
-          Image 2
-          <input value={form.image_2} onChange={(e) => setForm({ ...form, image_2: e.target.value })} />
+        <label className="profile-full-row">
+          Images (max 5)
+          <input 
+            type="file" 
+            accept="image/*" 
+            multiple 
+            onChange={(e) => setForm({ ...form, imageFiles: Array.from(e.target.files).slice(0, 5) })} 
+          />
         </label>
       </div>
 
