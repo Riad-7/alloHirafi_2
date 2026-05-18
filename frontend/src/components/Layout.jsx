@@ -17,7 +17,7 @@ export default function Layout() {
     const loadNotifications = async () => {
       if (!user) {
         if (!cancelled) {
-          setUnreadNotifications(0);
+          setNotifications([]);
         }
         return;
       }
@@ -79,6 +79,9 @@ export default function Layout() {
             Inbox
           </NavLink>
           <NavLink to="/profile">Profil</NavLink>
+          {user?.role === 'admin' && (
+            <NavLink to="/admin" className="admin-link">Admin</NavLink>
+          )}
         </nav>
 
         <div className="topbar-actions">

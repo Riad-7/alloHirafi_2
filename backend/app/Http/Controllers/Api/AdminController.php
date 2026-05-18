@@ -80,6 +80,15 @@ class AdminController extends Controller
             $artisan->update(['is_verified' => true]);
         }
 
+        // Notify the artisan
+        \App\Models\AppNotification::create([
+            'user_id' => $verification->user_id,
+            'type' => 'verification_approved',
+            'title' => 'Compte verifie !',
+            'body' => 'Felicitation, votre demande de verification a ete approuvee. Vous avez maintenant le badge de verification.',
+            'payload' => ['verification_id' => $verification->id],
+        ]);
+
         return response()->json([
             'message' => 'Artisan verifie avec succes.',
             'verification' => $verification->fresh(['user', 'reviewer']),
@@ -106,6 +115,18 @@ class AdminController extends Controller
             'reviewed_by' => $request->user()->id,
             'reviewed_at' => now(),
             'admin_notes' => $data['note'] ?? null,
+        ]);
+
+        // Notify the artisan
+        \App\Models\AppNotification::create([
+            'user_id' => $verification->user_id,
+            'type' => 'verification_rejected',
+            'title' => 'Demande de verification refusee',
+            'body' => 'Votre demande de verification a ete refusee. Veuillez consulter les notes de l\'administrateur pour plus d\'informations.',
+            'payload' => [
+                'verification_id' => $verification->id,
+                'reason' => $data['note'] ?? null
+            ],
         ]);
 
         return response()->json([
