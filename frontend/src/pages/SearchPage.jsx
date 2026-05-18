@@ -118,11 +118,31 @@ export default function SearchPage() {
           <h3>Filtres classiques</h3>
           <label>
             Metier
-            <input value={filters.metier} onChange={(e) => setFilters({ ...filters, metier: e.target.value })} />
+            <select className="form-select" value={filters.metier} onChange={(e) => setFilters({ ...filters, metier: e.target.value })}>
+              <option value="">Tous les metiers</option>
+              <option value="Plombier">Plombier</option>
+              <option value="Electricien">Electricien</option>
+              <option value="Menuisier">Menuisier</option>
+              <option value="Peintre">Peintre</option>
+              <option value="Macon">Macon</option>
+              <option value="Jardinier">Jardinier</option>
+              <option value="Serrurier">Serrurier</option>
+              <option value="Nettoyage">Nettoyage</option>
+            </select>
           </label>
           <label>
             Ville
-            <input value={filters.ville} onChange={(e) => setFilters({ ...filters, ville: e.target.value })} />
+            <select className="form-select" value={filters.ville} onChange={(e) => setFilters({ ...filters, ville: e.target.value })}>
+              <option value="">Toutes les villes</option>
+              <option value="Casablanca">Casablanca</option>
+              <option value="Rabat">Rabat</option>
+              <option value="Marrakech">Marrakech</option>
+              <option value="Fes">Fes</option>
+              <option value="Tanger">Tanger</option>
+              <option value="Agadir">Agadir</option>
+              <option value="Oujda">Oujda</option>
+              <option value="Kenitra">Kenitra</option>
+            </select>
           </label>
           <label>
             Note minimum
