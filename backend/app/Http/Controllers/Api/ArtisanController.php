@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Models\Artisan;
+use App\Models\VerificationRequest;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
@@ -35,6 +36,43 @@ class ArtisanController extends Controller
     {
         return response()->json([
             'artisan' => $artisan->load(['user', 'posts.images', 'reviews.client']),
+        ]);
+    }
+
+    public function requestVerification(Request $request): JsonResponse
+    {
+        $user = $request->user();
+
+        // Validate
+        $request->validate([
+            'document_type' => 'required|in:cin,diploma',
+            'document' => 'required|file|mimes:jpg,jpeg,png,pdf|max:5120',
+        ]);
+
+        // Check if user already has a pending verification request
+        $existingRequest = VerificationRequest::where('user_id', $user->id)
+            ->where('status', 'pending')
+            ->first();
+
+        if ($existingRequest) {
+            return response()->json([
+                'message' => 'You already have a pending verification request.',
+            ], 422);
+        }
+
+        // Store file
+        $path = $request->file('document')->store('verifications', 'local');
+
+        // Create record
+        VerificationRequest::create([
+            'user_id' => $user->id,
+            'document_type' => $request->document_type,
+            'document_path' => $path,
+            'status' => 'pending',
+        ]);
+
+        return response()->json([
+            'message' => 'Verification request submitted successfully.',
         ]);
     }
 }

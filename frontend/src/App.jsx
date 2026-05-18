@@ -7,6 +7,7 @@ import HomePage from './pages/HomePage.jsx';
 import InboxPage from './pages/InboxPage.jsx';
 import ProfilePage from './pages/ProfilePage.jsx';
 import SearchPage from './pages/SearchPage.jsx';
+import AdminDashboardPage from './pages/AdminDashboardPage.jsx';
 
 function ProtectedRoute({ children }) {
   const { user, booting } = useAuth();
@@ -17,6 +18,20 @@ function ProtectedRoute({ children }) {
 
   if (!user) {
     return <Navigate to="/auth" replace />;
+  }
+
+  return children;
+}
+
+function AdminRoute({ children }) {
+  const { user, booting } = useAuth();
+
+  if (booting) {
+    return <div className="shell-loader">Chargement...</div>;
+  }
+
+  if (!user || user.role !== 'admin') {
+    return <Navigate to="/" replace />;
   }
 
   return children;
@@ -50,6 +65,14 @@ export default function App() {
             <ProtectedRoute>
               <ProfilePage />
             </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/admin"
+          element={
+            <AdminRoute>
+              <AdminDashboardPage />
+            </AdminRoute>
           }
         />
         <Route path="/auth" element={<AuthPage />} />

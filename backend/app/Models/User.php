@@ -88,4 +88,9 @@ class User extends Authenticatable
     {
         return $this->hasMany(AppNotification::class);
     }
+
+    public function verificationRequests(): HasMany
+    {
+        return $this->hasMany(VerificationRequest::class);
+    }
 }

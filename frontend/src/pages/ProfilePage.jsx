@@ -128,125 +128,131 @@ export default function ProfilePage() {
       </div>
 
       <div className="two-column profile-columns">
-        <form className="panel form-panel" onSubmit={updateProfile}>
-          <div className="panel-heading">
-            <h3>Informations personnelles</h3>
-            <p>Garde ton profil clair et professionnel.</p>
-          </div>
+        <div className="stack-layout">
+          <form className="panel form-panel" onSubmit={updateProfile}>
+            <div className="panel-heading">
+              <h3>Informations personnelles</h3>
+              <p>Garde ton profil clair et professionnel.</p>
+            </div>
 
-          <div className="form-grid">
-            <label>
-              Nom complet
-              <input value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} required />
-            </label>
-            <label>
-              Email
-              <input type="email" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} required />
-            </label>
-            <label>
-              Ville
-              <input value={form.city} onChange={(e) => setForm({ ...form, city: e.target.value })} />
-            </label>
-            <label>
-              Telephone
-              <input value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value })} />
-            </label>
-            <label className="profile-full-row">
-              Image de profil
-              <input type="file" accept="image/*" onChange={(e) => setForm({ ...form, avatarFile: e.target.files[0] })} />
-            </label>
-          </div>
-
-          {user?.role === 'artisan' ? (
-            <div className="profile-artisan-grid">
+            <div className="form-grid">
               <label>
-                Metier
-                <input
-                  value={form.artisan_profile.craft}
-                  onChange={(e) =>
-                    setForm({
-                      ...form,
-                      artisan_profile: { ...form.artisan_profile, craft: e.target.value },
-                    })
-                  }
-                  required
-                />
+                Nom complet
+                <input value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} required />
               </label>
               <label>
-                Tarif horaire (DH)
-                <input
-                  type="number"
-                  min="0"
-                  value={form.artisan_profile.hourly_rate}
-                  onChange={(e) =>
-                    setForm({
-                      ...form,
-                      artisan_profile: { ...form.artisan_profile, hourly_rate: e.target.value },
-                    })
-                  }
-                />
+                Email
+                <input type="email" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} required />
               </label>
               <label>
-                Experience (ans)
-                <input
-                  type="number"
-                  min="0"
-                  value={form.artisan_profile.years_experience}
-                  onChange={(e) =>
-                    setForm({
-                      ...form,
-                      artisan_profile: { ...form.artisan_profile, years_experience: e.target.value },
-                    })
-                  }
-                />
+                Ville
+                <input value={form.city} onChange={(e) => setForm({ ...form, city: e.target.value })} />
               </label>
               <label>
-                Rayon service (km)
-                <input
-                  type="number"
-                  min="0"
-                  value={form.artisan_profile.service_radius_km}
-                  onChange={(e) =>
-                    setForm({
-                      ...form,
-                      artisan_profile: { ...form.artisan_profile, service_radius_km: e.target.value },
-                    })
-                  }
-                />
+                Telephone
+                <input value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value })} />
               </label>
               <label className="profile-full-row">
-                Bio artisan
-                <textarea
-                  rows="4"
-                  value={form.artisan_profile.bio}
-                  onChange={(e) =>
-                    setForm({
-                      ...form,
-                      artisan_profile: { ...form.artisan_profile, bio: e.target.value },
-                    })
-                  }
-                />
-              </label>
-              <label className="switch-row profile-full-row">
-                <input
-                  type="checkbox"
-                  checked={!!form.artisan_profile.is_available}
-                  onChange={(e) =>
-                    setForm({
-                      ...form,
-                      artisan_profile: { ...form.artisan_profile, is_available: e.target.checked },
-                    })
-                  }
-                />
-                Disponible pour nouveaux clients
+                Image de profil
+                <input type="file" accept="image/*" onChange={(e) => setForm({ ...form, avatarFile: e.target.files[0] })} />
               </label>
             </div>
-          ) : null}
 
-          <button className="primary-button" disabled={busy}>
-            {busy ? 'Mise a jour...' : 'Sauvegarder le profil'}
-          </button>
-        </form>
+            {user?.role === 'artisan' ? (
+              <div className="profile-artisan-grid">
+                <label>
+                  Metier
+                  <input
+                    value={form.artisan_profile.craft}
+                    onChange={(e) =>
+                      setForm({
+                        ...form,
+                        artisan_profile: { ...form.artisan_profile, craft: e.target.value },
+                      })
+                    }
+                    required
+                  />
+                </label>
+                <label>
+                  Tarif horaire (DH)
+                  <input
+                    type="number"
+                    min="0"
+                    value={form.artisan_profile.hourly_rate}
+                    onChange={(e) =>
+                      setForm({
+                        ...form,
+                        artisan_profile: { ...form.artisan_profile, hourly_rate: e.target.value },
+                      })
+                    }
+                  />
+                </label>
+                <label>
+                  Experience (ans)
+                  <input
+                    type="number"
+                    min="0"
+                    value={form.artisan_profile.years_experience}
+                    onChange={(e) =>
+                      setForm({
+                        ...form,
+                        artisan_profile: { ...form.artisan_profile, years_experience: e.target.value },
+                      })
+                    }
+                  />
+                </label>
+                <label>
+                  Rayon service (km)
+                  <input
+                    type="number"
+                    min="0"
+                    value={form.artisan_profile.service_radius_km}
+                    onChange={(e) =>
+                      setForm({
+                        ...form,
+                        artisan_profile: { ...form.artisan_profile, service_radius_km: e.target.value },
+                      })
+                    }
+                  />
+                </label>
+                <label className="profile-full-row">
+                  Bio artisan
+                  <textarea
+                    rows="4"
+                    value={form.artisan_profile.bio}
+                    onChange={(e) =>
+                      setForm({
+                        ...form,
+                        artisan_profile: { ...form.artisan_profile, bio: e.target.value },
+                      })
+                    }
+                  />
+                </label>
+                <label className="switch-row profile-full-row">
+                  <input
+                    type="checkbox"
+                    checked={!!form.artisan_profile.is_available}
+                    onChange={(e) =>
+                      setForm({
+                        ...form,
+                        artisan_profile: { ...form.artisan_profile, is_available: e.target.checked },
+                      })
+                    }
+                  />
+                  Disponible pour nouveaux clients
+                </label>
+              </div>
+            ) : null}
+
+            <button className="primary-button" disabled={busy}>
+              {busy ? 'Mise a jour...' : 'Sauvegarder le profil'}
+            </button>
+          </form>
+
+          {user?.role === 'artisan' && (
+            <VerificationSection user={user} refreshUser={refreshUser} />
+          )}
+        </div>
 
         <form className="panel form-panel" onSubmit={updatePassword}>
           <div className="panel-heading">
@@ -286,5 +292,99 @@ export default function ProfilePage() {
         </form>
       </div>
     </section>
+  );
+}
+
+function VerificationSection({ user, refreshUser }) {
+  const toast = useToast();
+  const [busy, setBusy] = useState(false);
+  const [docType, setDocType] = useState('cin');
+  const [docFile, setDocFile] = useState(null);
+
+  const handleVerify = async (e) => {
+    e.preventDefault();
+    if (!docFile) return toast.error('Veuillez selectionner un document.');
+
+    setBusy(true);
+    try {
+      const formData = new FormData();
+      formData.append('document_type', docType);
+      formData.append('document', docFile);
+
+      await apiRequest('/profile/verify', {
+        method: 'POST',
+        body: formData,
+      });
+
+      await refreshUser();
+      toast.success('Demande de verification envoyee.');
+    } catch (err) {
+      toast.error(err.message);
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  if (user.is_verified) {
+    return (
+      <div className="panel verification-panel success-status">
+        <div className="panel-heading">
+          <h3>Vérification du compte</h3>
+          <p>Ton compte est officiellement vérifié.</p>
+        </div>
+        <div className="success-box verification-badge-row">
+          <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="#3b82f6" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"></circle><polyline points="9 11 12 14 15 9"></polyline></svg>
+          <strong>Compte Vérifié</strong>
+        </div>
+      </div>
+    );
+  }
+
+  if (user.verification_status === 'pending') {
+    return (
+      <div className="panel verification-panel pending-status">
+        <div className="panel-heading">
+          <h3>Vérification du compte</h3>
+          <p>Nous examinons tes documents.</p>
+        </div>
+        <div className="info-box">
+          <p><strong>Vérification en cours...</strong></p>
+          <small className="muted-copy">Cela prend generalement 24h a 48h.</small>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="panel verification-panel">
+      <div className="panel-heading">
+        <h3>Vérification du compte</h3>
+        <p>Deviens un artisan vérifié pour gagner plus de confiance.</p>
+      </div>
+
+      {user.verification_status === 'rejected' && (
+        <div className="error-box rejection-note">
+          <strong>Demande rejetée</strong>
+          <p>{user.rejection_note || 'Tes documents ne correspondent pas a nos criteres.'}</p>
+        </div>
+      )}
+
+      <form className="verification-form stack-layout" onSubmit={handleVerify}>
+        <label>
+          Type de document
+          <select value={docType} onChange={(e) => setDocType(e.target.value)} className="form-select">
+            <option value="cin">Carte d'Identité Nationale (CIN)</option>
+            <option value="diploma">Diplôme ou Certification</option>
+          </select>
+        </label>
+        <label>
+          Fichier du document (PDF, JPG, PNG)
+          <input type="file" accept=".pdf,image/*" onChange={(e) => setDocFile(e.target.files[0])} required />
+        </label>
+        <button className="primary-button" disabled={busy}>
+          {busy ? 'Envoi...' : 'Soumettre pour vérification'}
+        </button>
+      </form>
+    </div>
   );
 }
