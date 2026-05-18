@@ -1,17 +1,10 @@
 <?php
 
-use App\Http\Controllers\Api\ArtisanController;
-use App\Http\Controllers\Api\ConversationController;
-use App\Http\Controllers\Api\DashboardController;
-use App\Http\Controllers\Api\NotificationController;
-use App\Http\Controllers\Api\PostController;
-use App\Http\Controllers\Api\ProfileController;
-use App\Http\Controllers\Api\QuoteController;
-use App\Http\Controllers\Api\ReviewController;
-use App\Http\Controllers\Api\SearchController;
-use App\Support\AuthUserPayload;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
+
+use App\Http\Controllers\Api\{ArtisanController, ConversationController, DashboardController, NotificationController, PostController, ProfileController, QuoteController, ReviewController, SearchController};
+use App\Support\AuthUserPayload;
 
 Route::get('/artisans', [ArtisanController::class, 'index']);
 Route::get('/artisans/{artisan}', [ArtisanController::class, 'show']);
