@@ -74,6 +74,7 @@ export default function Layout() {
         <nav className="main-nav">
           <NavLink to="/">Accueil</NavLink>
           {user?.role !== 'admin' && <NavLink to="/search">Recherche</NavLink>}
+          {user?.role === 'artisan' && <NavLink to="/annonces">Annonces</NavLink>}
           <NavLink to={user?.role === 'admin' ? '/admin' : '/dashboard'}>Dashboard</NavLink>
           {user?.role !== 'admin' && (
             <NavLink to="/inbox" className="inbox-link">
