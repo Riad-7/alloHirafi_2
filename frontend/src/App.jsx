@@ -6,6 +6,8 @@ import DashboardPage from './pages/DashboardPage.jsx';
 import HomePage from './pages/HomePage.jsx';
 import InboxPage from './pages/InboxPage.jsx';
 import ProfilePage from './pages/ProfilePage.jsx';
+import AnnoncesPage from './pages/AnnoncesPage.jsx';
+import AnnonceDetailsPage from './pages/AnnonceDetailsPage.jsx';
 import SearchPage from './pages/SearchPage.jsx';
 import AdminDashboardPage from './pages/AdminDashboardPage.jsx';
 import UserProfilePage from './pages/UserProfilePage.jsx';
@@ -101,6 +103,20 @@ export default function App() {
             <ProtectedRoute>
               <ProfilePage />
             </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/annonces"
+          element={
+            <ProtectedRoute>
+              <AnnoncesPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/annonces/:id"
+          element={
+            <AnnonceDetailsPage />
           }
         />
         <Route
