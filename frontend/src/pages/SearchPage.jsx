@@ -1,5 +1,7 @@
 import { useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import ArtisanCard from '../components/ArtisanCard.jsx';
+import PostCard from '../components/PostCard.jsx';
 import { useAuth } from '../context/AuthContext.jsx';
 import { useToast } from '../context/ToastContext.jsx';
 import { apiRequest } from '../services/api.js';
@@ -8,11 +10,13 @@ import { buildAvatarUrl, buildMediaUrl } from '../utils/userPresentation.js';
 export default function SearchPage() {
   const { user } = useAuth();
   const toast = useToast();
+  const navigate = useNavigate();
   const [filters, setFilters] = useState({ metier: '', ville: '', note: '' });
   const [prompt, setPrompt] = useState('plombier pas cher disponible a Agadir');
   const [artisans, setArtisans] = useState([]);
   const [posts, setPosts] = useState([]);
   const [aiFilters, setAiFilters] = useState(null);
+  const [activeTab, setActiveTab] = useState('artisans');
 
   useEffect(() => {
     let cancelled = false;
@@ -85,6 +89,7 @@ export default function SearchPage() {
         },
       });
       toast.success(`Conversation creee avec ${artisan.user.name}.`);
+      navigate('/inbox');
     } catch (err) {
       toast.error(err.message || 'Erreur lors de la prise de contact');
     }
@@ -92,10 +97,20 @@ export default function SearchPage() {
 
   return (
     <section className="stack-layout">
-      <div className="panel search-banner">
-        <div>
-          <p className="eyebrow">Recherche standard + recherche inspiree IA</p>
-          <h2>Trouve un artisan selon ton besoin reel</h2>
+      <div className="panel search-banner" style={{ textAlign: 'center', padding: '4rem 2rem', background: 'linear-gradient(135deg, var(--blue-600), var(--blue-800))', color: 'white', borderRadius: '1rem', marginBottom: '2rem' }}>
+        <div style={{ maxWidth: '600px', margin: '0 auto' }}>
+          <p className="eyebrow" style={{ color: 'var(--blue-200)', marginBottom: '0.5rem' }}>Trouve exactement ce qu'il te faut</p>
+          <h2 style={{ fontSize: '2.5rem', marginBottom: '1.5rem', color: 'white' }}>La meilleure façon de trouver ton artisan</h2>
+          <form onSubmit={runAiSearch} style={{ display: 'flex', gap: '0.5rem', background: 'rgba(255, 255, 255, 0.1)', padding: '0.5rem', borderRadius: '0.5rem', backdropFilter: 'blur(10px)' }}>
+            <input 
+              type="text" 
+              value={prompt} 
+              onChange={(e) => setPrompt(e.target.value)} 
+              placeholder="Que cherches-tu ? Ex: Plombier pas cher à Agadir"
+              style={{ flex: 1, padding: '0.75rem 1rem', border: 'none', borderRadius: '0.25rem', outline: 'none' }}
+            />
+            <button className="primary-button" style={{ whiteSpace: 'nowrap' }}>Recherche IA ✨</button>
+          </form>
         </div>
         {aiFilters ? (
           <div className="ai-chip-row">
@@ -110,10 +125,26 @@ export default function SearchPage() {
         ) : null}
       </div>
 
-      <div className="two-column">
-        <form className="panel form-panel" onSubmit={applyFilters}>
-          <h3>Filtres classiques</h3>
-          <label>
+      <div style={{ display: 'flex', justifyContent: 'center', gap: '1rem', marginBottom: '2rem' }}>
+        <button 
+          className={`ghost-button ${activeTab === 'artisans' ? 'active' : ''}`} 
+          onClick={() => setActiveTab('artisans')}
+          style={activeTab === 'artisans' ? { background: 'var(--blue-50)', color: 'var(--blue-700)', borderColor: 'var(--blue-200)' } : {}}
+        >
+          🧑‍🔧 Artisans
+        </button>
+        <button 
+          className={`ghost-button ${activeTab === 'annonces' ? 'active' : ''}`} 
+          onClick={() => setActiveTab('annonces')}
+          style={activeTab === 'annonces' ? { background: 'var(--blue-50)', color: 'var(--blue-700)', borderColor: 'var(--blue-200)' } : {}}
+        >
+          🏷️ Annonces
+        </button>
+      </div>
+
+      <div style={{ marginBottom: '2rem' }}>
+        <form className="panel" onSubmit={applyFilters} style={{ display: 'flex', flexWrap: 'wrap', gap: '1rem', alignItems: 'flex-end', padding: '1.5rem' }}>
+          <label style={{ flex: '1 1 200px', margin: 0 }}>
             Metier
             <select className="form-select" value={filters.metier} onChange={(e) => setFilters({ ...filters, metier: e.target.value })}>
               <option value="">Tous les metiers</option>
@@ -145,64 +176,46 @@ export default function SearchPage() {
             Note minimum
             <input value={filters.note} onChange={(e) => setFilters({ ...filters, note: e.target.value })} />
           </label>
-          <button className="ghost-button">Appliquer</button>
-        </form>
-
-        <form className="panel form-panel" onSubmit={runAiSearch}>
-          <h3>Recherche IA</h3>
-          <label>
-            Besoin en langage naturel
-            <textarea rows="5" value={prompt} onChange={(e) => setPrompt(e.target.value)} />
-          </label>
-          <button className="primary-button">Interpreter la demande</button>
+          <button className="primary-button" style={{ height: '42px' }}>Filtrer</button>
         </form>
       </div>
 
-      <div className="content-grid">
-        {artisans.length === 0 ? (
-          <div className="empty-state" style={{ gridColumn: '1 / -1' }}>
-            <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" style={{ opacity: 0.5, marginBottom: '1rem' }}><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
-            <h4>Aucun resultat</h4>
-            <p>Modifie tes filtres ou essaie une autre recherche IA pour trouver ton artisan.</p>
-          </div>
-        ) : (
-          <div className="card-grid">
-            {artisans.map((artisan) => (
-              <ArtisanCard key={artisan.id} artisan={artisan} onContact={contactArtisan} />
-            ))}
-          </div>
-        )}
-
-        <aside className="panel posts-panel">
-          <div className="panel-heading">
-            <h3>Annonces recentes</h3>
-            <p>Publiees par les artisans actifs.</p>
-          </div>
-
-          <div className="mini-post-list">
-            {posts.length === 0 ? (
-              <div className="empty-state" style={{ padding: '2rem 1rem' }}>
-                <p>Aucune annonce pour le moment.</p>
+      <div style={{ marginTop: '2rem' }}>
+        {activeTab === 'artisans' && (
+          <>
+            {artisans.length === 0 ? (
+              <div className="empty-state">
+                <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" style={{ opacity: 0.5, marginBottom: '1rem' }}><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+                <h4>Aucun artisan trouvé</h4>
+                <p>Modifie tes filtres ou essaie une autre recherche pour trouver ton artisan.</p>
               </div>
             ) : (
-              posts.map((post) => (
-                <article key={post.id} className="mini-post">
-                  <div className="mini-post-head">
-                    <img src={buildAvatarUrl(post.artisan.user)} alt={post.artisan.user.name} className="avatar-xs" />
-                    <div>
-                      <strong>{post.title}</strong>
-                      <span>{post.artisan.user.name}</span>
-                    </div>
-                  </div>
-                  {post.images?.[0]?.image_url ? <img src={buildMediaUrl(post.images[0].image_url)} alt={post.title} className="mini-post-cover" /> : null}
-                  <small>
-                    {post.city} - {post.price_from} - {post.price_to} DH
-                  </small>
-                </article>
-              ))
+              <div className="card-grid">
+                {artisans.map((artisan) => (
+                  <ArtisanCard key={artisan.id} artisan={artisan} onContact={contactArtisan} />
+                ))}
+              </div>
             )}
-          </div>
-        </aside>
+          </>
+        )}
+
+        {activeTab === 'annonces' && (
+          <>
+            {posts.length === 0 ? (
+              <div className="empty-state">
+                <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" style={{ opacity: 0.5, marginBottom: '1rem' }}><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+                <h4>Aucune annonce trouvée</h4>
+                <p>Aucune annonce ne correspond à tes critères pour le moment.</p>
+              </div>
+            ) : (
+              <div className="card-grid">
+                {posts.map((post) => (
+                  <PostCard key={post.id} post={post} showArtisan={true} />
+                ))}
+              </div>
+            )}
+          </>
+        )}
       </div>
     </section>
   );
