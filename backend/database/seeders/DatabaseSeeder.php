@@ -160,5 +160,7 @@ class DatabaseSeeder extends Seeder
                 'payload' => ['artisan_id' => $artisanOne->id],
             ],
         ])->each(fn (array $notification) => AppNotification::create($notification));
+
+        $this->call(AdminSeeder::class);
     }
 }

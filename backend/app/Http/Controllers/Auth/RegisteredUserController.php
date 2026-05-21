@@ -23,6 +23,9 @@ class RegisteredUserController extends Controller
     {
         $data = $request->validated();
         $generatedAvatar = 'https://ui-avatars.com/api/?name='.rawurlencode($data['name']).'&background=1f6feb&color=ffffff&size=256';
+        $avatar = $request->hasFile('avatar')
+            ? $request->getSchemeAndHttpHost().'/storage/'.$request->file('avatar')->store('avatars', 'public')
+            : $generatedAvatar;
 
         $user = User::create([
             'name' => $data['name'],
@@ -31,7 +34,7 @@ class RegisteredUserController extends Controller
             'role' => $data['role'] ?? 'client',
             'city' => $data['city'] ?? null,
             'phone' => $data['phone'] ?? null,
-            'avatar' => $data['avatar'] ?? $generatedAvatar,
+            'avatar' => $avatar,
         ]);
 
         if ($user->role === 'artisan') {

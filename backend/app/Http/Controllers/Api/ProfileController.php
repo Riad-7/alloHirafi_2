@@ -14,8 +14,14 @@ class ProfileController extends Controller
 {
     public function show(Request $request): JsonResponse
     {
+        $user = $request->user()->load('artisanProfile.posts.images');
+        $posts = $user->artisanProfile
+            ? $user->artisanProfile->posts()->with(['images', 'artisan.user'])->latest()->get()
+            : [];
+
         return response()->json([
-            'user' => AuthUserPayload::from($request->user()),
+            'user' => AuthUserPayload::from($user),
+            'posts' => $posts,
         ]);
     }
 
@@ -39,7 +45,7 @@ class ProfileController extends Controller
 
         $avatarPath = $user->avatar;
         if ($request->hasFile('avatar')) {
-            $avatarPath = config('app.url') . '/storage/' . $request->file('avatar')->store('avatars', 'public');
+            $avatarPath = $request->getSchemeAndHttpHost() . '/storage/' . $request->file('avatar')->store('avatars', 'public');
         }
 
         $user->update([

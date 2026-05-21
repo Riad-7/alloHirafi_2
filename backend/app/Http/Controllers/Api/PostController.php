@@ -14,6 +14,7 @@ class PostController extends Controller
         $posts = Post::query()
             ->with(['artisan.user', 'images'])
             ->when($request->string('city')->isNotEmpty(), fn ($q) => $q->where('city', $request->string('city')->value()))
+            ->when($request->user()?->artisanProfile && $request->boolean('mine'), fn ($q) => $q->where('artisan_id', $request->user()->artisanProfile->id))
             ->latest()
             ->get();
 
@@ -48,7 +49,7 @@ class PostController extends Controller
 
         if ($request->hasFile('images')) {
             foreach ($request->file('images') as $image) {
-                $path = config('app.url') . '/storage/' . $image->store('posts', 'public');
+                $path = $request->getSchemeAndHttpHost() . '/storage/' . $image->store('posts', 'public');
                 $post->images()->create(['image_url' => $path]);
             }
         }

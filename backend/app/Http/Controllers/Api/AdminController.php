@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Models\Artisan;
+use App\Models\User;
 use App\Models\VerificationRequest;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -18,9 +19,24 @@ class AdminController extends Controller
     public function stats(): JsonResponse
     {
         return response()->json([
+            'total_users' => User::count(),
+            'total_clients' => User::where('role', 'client')->count(),
             'total_artisans' => Artisan::count(),
             'pending_verifications' => VerificationRequest::where('status', 'pending')->count(),
         ]);
+    }
+
+    public function users(Request $request): JsonResponse
+    {
+        $role = $request->input('role');
+
+        $users = User::query()
+            ->with('artisanProfile')
+            ->when(in_array($role, ['client', 'artisan', 'admin'], true), fn ($query) => $query->where('role', $role))
+            ->latest()
+            ->get(['id', 'name', 'email', 'role', 'city', 'phone', 'avatar', 'created_at']);
+
+        return response()->json(['users' => $users]);
     }
 
     /**
