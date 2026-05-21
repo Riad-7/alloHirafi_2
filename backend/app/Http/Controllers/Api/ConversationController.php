@@ -42,8 +42,9 @@ class ConversationController extends Controller
         $client = $request->user();
         $artisan = User::findOrFail($data['artisan_id']);
 
-        abort_if($client->role !== 'client', 403, 'Only clients can start a conversation.');
+        abort_if(! in_array($client->role, ['client', 'artisan'], true), 403, 'Only clients and artisans can start a conversation.');
         abort_if($artisan->role !== 'artisan', 422, 'Selected user is not an artisan.');
+        abort_if($client->id === $artisan->id, 422, 'Vous ne pouvez pas ouvrir une conversation avec vous-meme.');
 
         $conversation = Conversation::firstOrCreate([
             'client_id' => $client->id,

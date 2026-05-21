@@ -3,12 +3,13 @@
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
-use App\Http\Controllers\Api\{AdminController, ArtisanController, ConversationController, DashboardController, NotificationController, PostController, ProfileController, QuoteController, ReviewController, SearchController, VerificationController};
+use App\Http\Controllers\Api\{AdminController, ArtisanController, ConversationController, DashboardController, NotificationController, PostController, ProfileController, QuoteController, ReviewController, SearchController, UserProfileController, VerificationController};
 use App\Support\AuthUserPayload;
 
 Route::get('/artisans', [ArtisanController::class, 'index']);
 Route::get('/artisans/{artisan}', [ArtisanController::class, 'show']);
 Route::get('/posts', [PostController::class, 'index']);
+Route::get('/users/{user}', [UserProfileController::class, 'show']);
 Route::post('/search/ai', [SearchController::class, 'search']);
 
 Route::middleware('auth:sanctum')->group(function () {
@@ -45,6 +46,7 @@ Route::middleware('auth:sanctum')->group(function () {
     // Admin routes
     Route::middleware(['admin'])->prefix('admin')->group(function () {
         Route::get('/stats', [AdminController::class, 'stats']);
+        Route::get('/users', [AdminController::class, 'users']);
         Route::get('/verifications/pending', function (Request $request) {
             $request->merge(['status' => 'pending']);
             return app(AdminController::class)->verifications($request);
