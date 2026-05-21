@@ -9,6 +9,7 @@ use App\Support\AuthUserPayload;
 Route::get('/artisans', [ArtisanController::class, 'index']);
 Route::get('/artisans/{artisan}', [ArtisanController::class, 'show']);
 Route::get('/posts', [PostController::class, 'index']);
+Route::get('/posts/{post}', [PostController::class, 'show']);
 Route::get('/users/{user}', [UserProfileController::class, 'show']);
 Route::post('/search/ai', [SearchController::class, 'search']);
 
@@ -29,6 +30,8 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('/profile/verify', [VerificationController::class, 'store']);
 
     Route::post('/posts', [PostController::class, 'store']);
+    Route::put('/posts/{post}', [PostController::class, 'update']);
+    Route::delete('/posts/{post}', [PostController::class, 'destroy']);
 
     Route::get('/conversations', [ConversationController::class, 'index']);
     Route::post('/conversations', [ConversationController::class, 'store']);
