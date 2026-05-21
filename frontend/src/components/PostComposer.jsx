@@ -1,6 +1,6 @@
 import { useState } from 'react';
 
-const initialState = {
+const defaultState = {
   title: '',
   description: '',
   city: '',
@@ -10,8 +10,16 @@ const initialState = {
   imageFiles: [],
 };
 
-export default function PostComposer({ onSubmit }) {
-  const [form, setForm] = useState(initialState);
+export default function PostComposer({ onSubmit, initialData, onCancel }) {
+  const [form, setForm] = useState(initialData ? {
+    title: initialData.title || '',
+    description: initialData.description || '',
+    city: initialData.city || '',
+    price_from: initialData.price_from || '',
+    price_to: initialData.price_to || '',
+    available_at: initialData.available_at ? initialData.available_at.slice(0, 16) : '',
+    imageFiles: [],
+  } : defaultState);
   const [busy, setBusy] = useState(false);
 
   const handleSubmit = async (event) => {
@@ -32,7 +40,9 @@ export default function PostComposer({ onSubmit }) {
       });
 
       await onSubmit(formData);
-      setForm(initialState);
+      if (!initialData) {
+        setForm(defaultState);
+      }
     } finally {
       setBusy(false);
     }
@@ -41,8 +51,8 @@ export default function PostComposer({ onSubmit }) {
   return (
     <form className="panel form-panel" onSubmit={handleSubmit}>
       <div className="panel-heading">
-        <h3>Publier une annonce</h3>
-        <p>Ajoute une offre claire avec prix, ville et visuels.</p>
+        <h3>{initialData ? 'Modifier l\'annonce' : 'Publier une annonce'}</h3>
+        <p>{initialData ? 'Mets à jour les informations de ton annonce.' : 'Ajoute une offre claire avec prix, ville et visuels.'}</p>
       </div>
 
       <div className="form-grid">
@@ -91,14 +101,21 @@ export default function PostComposer({ onSubmit }) {
         />
       </label>
 
-      <button className="primary-button" disabled={busy} style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '0.5rem' }}>
-        {busy ? (
-          <>
-            <svg className="spinner" xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ animation: 'spin 1s linear infinite' }}><line x1="12" y1="2" x2="12" y2="6"></line><line x1="12" y1="18" x2="12" y2="22"></line><line x1="4.93" y1="4.93" x2="7.76" y2="7.76"></line><line x1="16.24" y1="16.24" x2="19.07" y2="19.07"></line><line x1="2" y1="12" x2="6" y2="12"></line><line x1="18" y1="12" x2="22" y2="12"></line><line x1="4.93" y1="19.07" x2="7.76" y2="16.24"></line><line x1="16.24" y1="7.76" x2="19.07" y2="4.93"></line></svg>
-            Publication...
-          </>
-        ) : 'Publier'}
-      </button>
+      <div style={{ display: 'flex', gap: '1rem', marginTop: '1rem' }}>
+        <button className="primary-button" disabled={busy} style={{ flex: 1, display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '0.5rem' }}>
+          {busy ? (
+            <>
+              <svg className="spinner" xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ animation: 'spin 1s linear infinite' }}><line x1="12" y1="2" x2="12" y2="6"></line><line x1="12" y1="18" x2="12" y2="22"></line><line x1="4.93" y1="4.93" x2="7.76" y2="7.76"></line><line x1="16.24" y1="16.24" x2="19.07" y2="19.07"></line><line x1="2" y1="12" x2="6" y2="12"></line><line x1="18" y1="12" x2="22" y2="12"></line><line x1="4.93" y1="19.07" x2="7.76" y2="16.24"></line><line x1="16.24" y1="7.76" x2="19.07" y2="4.93"></line></svg>
+              {initialData ? 'Mise à jour...' : 'Publication...'}
+            </>
+          ) : (initialData ? 'Mettre à jour' : 'Publier')}
+        </button>
+        {onCancel && (
+          <button type="button" className="ghost-button" onClick={onCancel} disabled={busy}>
+            Annuler
+          </button>
+        )}
+      </div>
     </form>
   );
 }
