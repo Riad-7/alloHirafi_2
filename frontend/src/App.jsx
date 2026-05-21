@@ -8,6 +8,7 @@ import InboxPage from './pages/InboxPage.jsx';
 import ProfilePage from './pages/ProfilePage.jsx';
 import SearchPage from './pages/SearchPage.jsx';
 import AdminDashboardPage from './pages/AdminDashboardPage.jsx';
+import UserProfilePage from './pages/UserProfilePage.jsx';
 
 function ProtectedRoute({ children }) {
   const { user, booting } = useAuth();
@@ -37,19 +38,34 @@ function AdminRoute({ children }) {
   return children;
 }
 
+function DashboardRoute() {
+  const { user, booting } = useAuth();
+
+  if (booting) {
+    return <div className="shell-loader">Chargement...</div>;
+  }
+
+  if (!user) {
+    return <Navigate to="/auth" replace />;
+  }
+
+  if (user.role === 'admin') {
+    return <Navigate to="/admin" replace />;
+  }
+
+  return <DashboardPage />;
+}
+
 export default function App() {
   return (
     <Routes>
       <Route element={<Layout />}>
         <Route index element={<HomePage />} />
         <Route path="/search" element={<SearchPage />} />
+        <Route path="/users/:id" element={<UserProfilePage />} />
         <Route
           path="/dashboard"
-          element={
-            <ProtectedRoute>
-              <DashboardPage />
-            </ProtectedRoute>
-          }
+          element={<DashboardRoute />}
         />
         <Route
           path="/inbox"

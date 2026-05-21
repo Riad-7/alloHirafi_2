@@ -3,7 +3,7 @@ import ArtisanCard from '../components/ArtisanCard.jsx';
 import { useAuth } from '../context/AuthContext.jsx';
 import { useToast } from '../context/ToastContext.jsx';
 import { apiRequest } from '../services/api.js';
-import { buildAvatarUrl } from '../utils/userPresentation.js';
+import { buildAvatarUrl, buildMediaUrl } from '../utils/userPresentation.js';
 
 export default function SearchPage() {
   const { user } = useAuth();
@@ -37,7 +37,7 @@ export default function SearchPage() {
     return () => {
       cancelled = true;
     };
-  }, []);
+  }, [toast]);
 
   const applyFilters = async (event) => {
     event.preventDefault();
@@ -72,7 +72,7 @@ export default function SearchPage() {
 
   const contactArtisan = async (artisan) => {
     if (!user) {
-      toast.error('Connecte-toi comme client pour envoyer un message.');
+      toast.error('Connecte-toi pour envoyer un message.');
       return;
     }
 
@@ -194,7 +194,7 @@ export default function SearchPage() {
                       <span>{post.artisan.user.name}</span>
                     </div>
                   </div>
-                  {post.images?.[0]?.image_url ? <img src={post.images[0].image_url} alt={post.title} className="mini-post-cover" /> : null}
+                  {post.images?.[0]?.image_url ? <img src={buildMediaUrl(post.images[0].image_url)} alt={post.title} className="mini-post-cover" /> : null}
                   <small>
                     {post.city} - {post.price_from} - {post.price_to} DH
                   </small>

@@ -52,6 +52,17 @@ export function AuthProvider({ children }) {
     return { user: me };
   };
 
+  const register = async (payload, endpoint = '/register') => {
+    await authRequest(endpoint, {
+      method: 'POST',
+      body: payload,
+    });
+
+    const me = await refreshUser();
+
+    return { user: me };
+  };
+
   const logout = async () => {
     try {
       await authRequest('/logout', { method: 'POST' });
@@ -62,7 +73,7 @@ export function AuthProvider({ children }) {
     setUser(null);
   };
 
-  return <AuthContext.Provider value={{ user, setUser, booting, login, logout, refreshUser }}>{children}</AuthContext.Provider>;
+  return <AuthContext.Provider value={{ user, setUser, booting, login, register, logout, refreshUser }}>{children}</AuthContext.Provider>;
 }
 
 // eslint-disable-next-line react-refresh/only-export-components

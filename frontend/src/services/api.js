@@ -1,6 +1,16 @@
 const browserHost = typeof window !== 'undefined' ? window.location.hostname : 'localhost';
-const API_URL = import.meta.env.VITE_API_URL ?? `http://${browserHost}:8000/api`;
-const BACKEND_URL = import.meta.env.VITE_BACKEND_URL ?? API_URL.replace(/\/api\/?$/, '');
+const configuredApiUrl = import.meta.env.VITE_API_URL ?? `http://${browserHost}:8000/api`;
+
+function normalizeLocalUrl(url) {
+  if (!['localhost', '127.0.0.1'].includes(browserHost)) {
+    return url;
+  }
+
+  return url.replace(/^http:\/\/(localhost|127\.0\.0\.1)(?=:\d+|\/|$)/, `http://${browserHost}`);
+}
+
+const API_URL = normalizeLocalUrl(configuredApiUrl);
+const BACKEND_URL = normalizeLocalUrl(import.meta.env.VITE_BACKEND_URL ?? API_URL.replace(/\/api\/?$/, ''));
 const SAFE_METHODS = new Set(['GET', 'HEAD', 'OPTIONS']);
 
 let csrfReady = false;
@@ -47,7 +57,7 @@ async function ensureCsrfCookie() {
   return csrfPromise;
 }
 
-async function requestJson(url, options = {}) {
+async function requestJson(url, options = {}, retriedAfterCsrfMismatch = false) {
   const method = (options.method ?? 'GET').toUpperCase();
 
   if (!SAFE_METHODS.has(method)) {
@@ -85,6 +95,13 @@ async function requestJson(url, options = {}) {
     } catch {
       data = { message: text };
     }
+  }
+
+  if (response.status === 419 && !retriedAfterCsrfMismatch && !SAFE_METHODS.has(method)) {
+    csrfReady = false;
+    csrfPromise = null;
+    await ensureCsrfCookie();
+    return requestJson(url, options, true);
   }
 
   if (!response.ok) {

@@ -5,7 +5,6 @@ import StatCard from '../components/StatCard.jsx';
 import { useAuth } from '../context/AuthContext.jsx';
 import { useToast } from '../context/ToastContext.jsx';
 import { apiRequest } from '../services/api.js';
-import { formatDateTime } from '../utils/date.js';
 import { buildAvatarUrl } from '../utils/userPresentation.js';
 
 export default function DashboardPage() {
@@ -50,7 +49,7 @@ export default function DashboardPage() {
     return () => {
       cancelled = true;
     };
-  }, []);
+  }, [toast]);
 
   const publishPost = async (payload) => {
     try {
@@ -64,9 +63,6 @@ export default function DashboardPage() {
       toast.error(err.message || 'Erreur lors de la publication');
     }
   };
-
-
-
   const leaveReview = async (artisan) => {
     try {
       await apiRequest(`/artisans/${artisan.id}/reviews`, {

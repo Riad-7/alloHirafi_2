@@ -1,4 +1,5 @@
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
+import { Link } from 'react-router-dom';
 import { useToast } from '../context/ToastContext.jsx';
 import { apiRequest } from '../services/api.js';
 import StatCard from '../components/StatCard.jsx';
@@ -6,33 +7,39 @@ import { buildAvatarUrl } from '../utils/userPresentation.js';
 
 export default function AdminDashboardPage() {
   const toast = useToast();
-  const [stats, setStats] = useState({ total_artisans: 0, pending_verifications: 0 });
+  const [stats, setStats] = useState({ total_users: 0, total_clients: 0, total_artisans: 0, pending_verifications: 0 });
   const [pendingRequests, setPendingRequests] = useState([]);
+  const [users, setUsers] = useState([]);
+  const [userRoleFilter, setUserRoleFilter] = useState('client');
   const [loading, setLoading] = useState(true);
   const [processingId, setProcessingId] = useState(null);
   const [rejectionNote, setRejectionNote] = useState('');
   const [showRejectionModal, setShowRejectionModal] = useState(false);
   const [selectedRequest, setSelectedRequest] = useState(null);
 
-  useEffect(() => {
-    fetchData();
-  }, []);
-
-  const fetchData = async () => {
+  const fetchData = useCallback(async () => {
     setLoading(true);
     try {
-      const [statsData, requestsData] = await Promise.all([
+      const [statsData, requestsData, usersData] = await Promise.all([
         apiRequest('/admin/stats'),
         apiRequest('/admin/verifications/pending'),
+        apiRequest(`/admin/users?role=${userRoleFilter}`),
       ]);
       setStats(statsData);
       setPendingRequests(requestsData);
-    } catch (err) {
+      setUsers(usersData.users ?? []);
+    } catch {
       toast.error('Erreur lors du chargement des données.');
     } finally {
       setLoading(false);
     }
-  };
+  }, [toast, userRoleFilter]);
+
+  useEffect(() => {
+    const timeoutId = window.setTimeout(fetchData, 0);
+
+    return () => window.clearTimeout(timeoutId);
+  }, [fetchData]);
 
   const handleApprove = async (id) => {
     setProcessingId(id);
@@ -90,6 +97,14 @@ export default function AdminDashboardPage() {
       </header>
 
       <div className="stats-row">
+        <StatCard
+          label="Utilisateurs"
+          value={stats.total_users}
+        />
+        <StatCard
+          label="Clients"
+          value={stats.total_clients}
+        />
         <StatCard 
           label="Artisans inscrits" 
           value={stats.total_artisans} 
@@ -102,6 +117,59 @@ export default function AdminDashboardPage() {
           icon={<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg>}
         />
       </div>
+
+      <section className="panel requests-panel">
+        <div className="panel-heading">
+          <div>
+            <h3>Utilisateurs</h3>
+            <p>Clients, artisans et admins visibles seulement par l'administration.</p>
+          </div>
+          <div className="segmented">
+            <button className={userRoleFilter === 'client' ? 'active' : ''} onClick={() => setUserRoleFilter('client')} type="button">
+              Clients
+            </button>
+            <button className={userRoleFilter === 'artisan' ? 'active' : ''} onClick={() => setUserRoleFilter('artisan')} type="button">
+              Artisans
+            </button>
+            <button className={userRoleFilter === 'admin' ? 'active' : ''} onClick={() => setUserRoleFilter('admin')} type="button">
+              Admins
+            </button>
+          </div>
+        </div>
+
+        <div className="admin-table-wrapper">
+          <table className="admin-table">
+            <thead>
+              <tr>
+                <th>Utilisateur</th>
+                <th>Role</th>
+                <th>Ville</th>
+                <th>Telephone</th>
+                <th>Date</th>
+              </tr>
+            </thead>
+            <tbody>
+              {users.map((item) => (
+                <tr key={item.id}>
+                  <td>
+                    <Link to={`/users/${item.id}`} className="artisan-cell">
+                      <img src={buildAvatarUrl(item)} alt="" className="avatar-xs" />
+                      <div>
+                        <strong>{item.name}</strong>
+                        <small>{item.email}</small>
+                      </div>
+                    </Link>
+                  </td>
+                  <td>{item.role}</td>
+                  <td>{item.city || 'Non precisee'}</td>
+                  <td>{item.phone || '-'}</td>
+                  <td>{new Date(item.created_at).toLocaleDateString()}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </section>
 
       <section className="panel requests-panel">
         <div className="panel-heading">
@@ -128,13 +196,13 @@ export default function AdminDashboardPage() {
                 {pendingRequests.map((req) => (
                   <tr key={req.id}>
                     <td>
-                      <div className="artisan-cell">
+                      <Link to={`/users/${req.user.id}`} className="artisan-cell">
                         <img src={buildAvatarUrl(req.user)} alt="" className="avatar-xs" />
                         <div>
                           <strong>{req.user.name}</strong>
                           <small>{req.user.email}</small>
                         </div>
-                      </div>
+                      </Link>
                     </td>
                     <td>{req.document_type.toUpperCase()}</td>
                     <td>{new Date(req.created_at).toLocaleDateString()}</td>

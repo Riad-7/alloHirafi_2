@@ -1,8 +1,10 @@
 import { useEffect, useMemo, useState } from 'react';
+import PostComposer from '../components/PostComposer.jsx';
 import { useAuth } from '../context/AuthContext.jsx';
 import { useToast } from '../context/ToastContext.jsx';
 import { apiRequest } from '../services/api.js';
-import { buildAvatarUrl, formatRole } from '../utils/userPresentation.js';
+import { formatDateTime } from '../utils/date.js';
+import { buildAvatarUrl, buildMediaUrl, formatRole } from '../utils/userPresentation.js';
 
 function buildProfileForm(user) {
   return {
@@ -34,10 +36,13 @@ export default function ProfilePage() {
   });
   const [busy, setBusy] = useState(false);
   const [passwordBusy, setPasswordBusy] = useState(false);
+  const [posts, setPosts] = useState([]);
 
   useEffect(() => {
     const sync = async () => {
       try {
+        const profileData = await apiRequest('/profile');
+        setPosts(profileData.posts ?? []);
         await refreshUser();
       } catch {
         // Best effort sync.
@@ -108,6 +113,20 @@ export default function ProfilePage() {
       toast.error(err.message || 'Erreur lors du changement de mot de passe');
     } finally {
       setPasswordBusy(false);
+    }
+  };
+
+  const publishPost = async (payload) => {
+    try {
+      await apiRequest('/posts', {
+        method: 'POST',
+        body: payload,
+      });
+      const profileData = await apiRequest('/profile');
+      setPosts(profileData.posts ?? []);
+      toast.success('Annonce publiee avec succes.');
+    } catch (err) {
+      toast.error(err.message || 'Erreur lors de la publication');
     }
   };
 
@@ -291,7 +310,69 @@ export default function ProfilePage() {
           </button>
         </form>
       </div>
+
+      {user?.role === 'artisan' ? (
+        <section className="profile-posts-section">
+          <div className="profile-posts-hero">
+            <div>
+              <p className="eyebrow">Annonces</p>
+              <h2>Ton portfolio commercial</h2>
+              <p className="muted-copy">Publie tes services avec des photos nettes pour attirer les bons clients.</p>
+            </div>
+            <span className="status-pill">{posts.length} annonce{posts.length > 1 ? 's' : ''}</span>
+          </div>
+
+          <div className="profile-posts-layout">
+            <PostComposer onSubmit={publishPost} />
+
+            <div className="profile-posts-list">
+              {posts.length === 0 ? (
+                <div className="empty-state profile-posts-empty">
+                  <h4>Aucune annonce publiee</h4>
+                  <p>Ajoute ta premiere annonce avec une image pour rendre ton profil plus convaincant.</p>
+                </div>
+              ) : (
+                posts.map((post) => <ProfilePostCard key={post.id} post={post} />)
+              )}
+            </div>
+          </div>
+        </section>
+      ) : null}
     </section>
+  );
+}
+
+function ProfilePostCard({ post }) {
+  const cover = buildMediaUrl(post.images?.[0]?.image_url);
+  const priceLabel =
+    post.price_from || post.price_to
+      ? `${post.price_from ?? '0'} - ${post.price_to ?? post.price_from} DH`
+      : 'Prix sur devis';
+
+  return (
+    <article className="profile-post-card">
+      <div className="profile-post-media">
+        {cover ? (
+          <img src={cover} alt={post.title} />
+        ) : (
+          <div className="profile-post-placeholder">
+            <span>Image</span>
+          </div>
+        )}
+        <span className="profile-post-city">{post.city}</span>
+      </div>
+
+      <div className="profile-post-content">
+        <div>
+          <h3>{post.title}</h3>
+          <p>{post.description}</p>
+        </div>
+        <div className="profile-post-footer">
+          <strong>{priceLabel}</strong>
+          <span>{post.available_at ? formatDateTime(post.available_at) : 'Disponible'}</span>
+        </div>
+      </div>
+    </article>
   );
 }
 

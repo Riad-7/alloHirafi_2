@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext.jsx';
 import { useToast } from '../context/ToastContext.jsx';
 import { apiRequest } from '../services/api.js';
@@ -7,6 +8,7 @@ import { buildAvatarUrl, formatRole } from '../utils/userPresentation.js';
 
 export default function InboxPage() {
   const { user } = useAuth();
+  const navigate = useNavigate();
   const toast = useToast();
   const [conversations, setConversations] = useState([]);
   const [selectedId, setSelectedId] = useState(null);
@@ -83,6 +85,11 @@ export default function InboxPage() {
     if (conversation.unread_messages_count > 0) {
       await markConversationRead(conversation.id);
     }
+  };
+
+  const openUserProfile = (event, userId) => {
+    event.stopPropagation();
+    navigate(`/users/${userId}`);
   };
 
   const sendMessage = async (event) => {
@@ -201,7 +208,19 @@ export default function InboxPage() {
                 className={`conversation-item ${conversation.id === selectedId ? 'active' : ''}`}
                 onClick={() => handleSelectConversation(conversation)}
               >
-                <img src={buildAvatarUrl(peer)} alt={peer.name} className="avatar-sm" />
+                <span
+                  className="avatar-link"
+                  onClick={(event) => openUserProfile(event, peer.id)}
+                  onKeyDown={(event) => {
+                    if (event.key === 'Enter' || event.key === ' ') {
+                      openUserProfile(event, peer.id);
+                    }
+                  }}
+                  role="link"
+                  tabIndex={0}
+                >
+                  <img src={buildAvatarUrl(peer)} alt={peer.name} className="avatar-sm" />
+                </span>
                 <div className="conversation-main">
                   <div className="conversation-title-row">
                     <strong>{peer.name}</strong>
@@ -233,7 +252,9 @@ export default function InboxPage() {
 
             {selectedPeer ? (
               <div className="chat-peer-card">
-                <img src={buildAvatarUrl(selectedPeer)} alt={selectedPeer.name} className="avatar-sm" />
+                <Link to={`/users/${selectedPeer.id}`} className="avatar-link">
+                  <img src={buildAvatarUrl(selectedPeer)} alt={selectedPeer.name} className="avatar-sm" />
+                </Link>
                 <div>
                   <strong>{selectedPeer.name}</strong>
                   <small>{selectedPeer.city || 'Maroc'}</small>
@@ -246,7 +267,9 @@ export default function InboxPage() {
             {selectedConversation?.messages?.length ? (
               selectedConversation.messages.map((message) => (
                 <article key={message.id} className={`message-bubble ${message.sender_id === user.id ? 'mine' : ''}`}>
-                  <img src={buildAvatarUrl(message.sender)} alt={message.sender.name} className="avatar-xs" />
+                  <Link to={`/users/${message.sender.id}`} className="avatar-link">
+                    <img src={buildAvatarUrl(message.sender)} alt={message.sender.name} className="avatar-xs" />
+                  </Link>
                   <div className="message-content">
                     <div className="message-author">
                       <strong>{message.sender.name}</strong>

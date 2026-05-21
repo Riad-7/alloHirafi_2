@@ -47,7 +47,15 @@ export default function AuthPage() {
     setBusy(true);
 
     try {
-      await register(registerForm, '/register');
+      const formData = new FormData();
+
+      Object.entries(registerForm).forEach(([key, value]) => {
+        if (value !== '' && value !== null && value !== undefined) {
+          formData.append(key, value);
+        }
+      });
+
+      await register(formData, '/register');
       toast.success('Compte cree avec succes !');
       navigate('/dashboard');
     } catch (err) {
@@ -141,8 +149,8 @@ export default function AuthPage() {
                 <input value={registerForm.phone} onChange={(event) => setRegisterForm({ ...registerForm, phone: event.target.value })} />
               </label>
               <label>
-                URL image profile
-                <input value={registerForm.avatar} onChange={(event) => setRegisterForm({ ...registerForm, avatar: event.target.value })} />
+                Image de profil
+                <input type="file" accept="image/*" onChange={(e) => setRegisterForm({ ...registerForm, avatar: e.target.files[0] })} />
               </label>
               <label>
                 Role

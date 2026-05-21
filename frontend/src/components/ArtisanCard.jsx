@@ -1,7 +1,8 @@
-import { buildAvatarUrl } from '../utils/userPresentation.js';
+import { Link } from 'react-router-dom';
+import { buildAvatarUrl, buildMediaUrl } from '../utils/userPresentation.js';
 
 export default function ArtisanCard({ artisan, onContact, onReview }) {
-  const coverImage = artisan.posts?.[0]?.images?.[0]?.image_url;
+  const coverImage = buildMediaUrl(artisan.posts?.[0]?.images?.[0]?.image_url);
 
   return (
     <article className="artisan-card premium-card">
@@ -25,7 +26,9 @@ export default function ArtisanCard({ artisan, onContact, onReview }) {
       <div className="artisan-card-content">
         <div className="artisan-card-top">
           <div className="artisan-identity">
-            <img src={buildAvatarUrl(artisan.user)} alt={artisan.user.name} className="avatar-md" />
+            <Link to={`/users/${artisan.user.id}`} className="avatar-link" aria-label={`Voir le profil de ${artisan.user.name}`}>
+              <img src={buildAvatarUrl(artisan.user)} alt={artisan.user.name} className="avatar-md" />
+            </Link>
             <div className="artisan-name-wrapper">
               <h3>{artisan.user.name}</h3>
               {artisan.is_verified ? (

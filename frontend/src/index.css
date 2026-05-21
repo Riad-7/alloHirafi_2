@@ -350,6 +350,18 @@ textarea {
   height: 1.7rem;
 }
 
+.avatar-link {
+  display: inline-flex;
+  flex-shrink: 0;
+  border-radius: 50%;
+  cursor: pointer;
+}
+
+.avatar-link:focus-visible {
+  outline: 3px solid rgba(31, 111, 235, 0.25);
+  outline-offset: 3px;
+}
+
 .avatar-sm {
   width: 2.2rem;
   height: 2.2rem;
@@ -959,6 +971,175 @@ textarea {
   height: 1.1rem;
 }
 
+.profile-posts-section {
+  display: grid;
+  gap: 1rem;
+  padding: 1.1rem;
+  border: 1px solid rgba(13, 27, 42, 0.1);
+  border-radius: 24px;
+  background: rgba(255, 255, 255, 0.72);
+  box-shadow: 0 18px 42px rgba(13, 27, 42, 0.08);
+}
+
+.profile-posts-hero {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 0.45rem 0.25rem 0.8rem;
+}
+
+.profile-posts-hero h2 {
+  margin: 0.1rem 0 0.35rem;
+}
+
+.profile-posts-layout {
+  display: grid;
+  grid-template-columns: minmax(300px, 0.88fr) minmax(0, 1.12fr);
+  align-items: start;
+  gap: 1rem;
+}
+
+.profile-posts-layout > .form-panel {
+  margin: 0;
+  background: #ffffff;
+}
+
+.profile-posts-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
+  gap: 1rem;
+}
+
+.profile-post-card {
+  overflow: hidden;
+  border: 1px solid rgba(13, 27, 42, 0.08);
+  border-radius: 18px;
+  background: #ffffff;
+  box-shadow: 0 14px 30px rgba(13, 27, 42, 0.08);
+}
+
+.profile-post-media {
+  position: relative;
+  height: 190px;
+  background: #e8eef5;
+}
+
+.profile-post-media img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.profile-post-placeholder {
+  width: 100%;
+  height: 100%;
+  display: grid;
+  place-items: center;
+  color: #63748a;
+  font-weight: 800;
+  background:
+    linear-gradient(135deg, rgba(31, 111, 235, 0.12), rgba(245, 158, 11, 0.14)),
+    #eef4fb;
+}
+
+.profile-post-city {
+  position: absolute;
+  left: 0.8rem;
+  bottom: 0.8rem;
+  padding: 0.38rem 0.72rem;
+  border-radius: 999px;
+  color: #ffffff;
+  font-size: 0.78rem;
+  font-weight: 800;
+  background: rgba(13, 27, 42, 0.72);
+  backdrop-filter: blur(8px);
+}
+
+.profile-post-content {
+  display: grid;
+  gap: 1rem;
+  padding: 1rem;
+}
+
+.profile-post-content h3 {
+  margin: 0 0 0.45rem;
+  font-family: 'Manrope', sans-serif;
+  font-size: 1rem;
+}
+
+.profile-post-content p {
+  display: -webkit-box;
+  min-height: 3.9em;
+  margin: 0;
+  overflow: hidden;
+  color: var(--muted);
+  font-size: 0.9rem;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 3;
+}
+
+.profile-post-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.8rem;
+  padding-top: 0.85rem;
+  border-top: 1px solid rgba(13, 27, 42, 0.08);
+}
+
+.profile-post-footer strong {
+  color: var(--brand-strong);
+}
+
+.profile-post-footer span {
+  color: #75849a;
+  font-size: 0.78rem;
+}
+
+.profile-posts-empty {
+  grid-column: 1 / -1;
+  min-height: 280px;
+  background: #ffffff;
+}
+
+.public-profile-page {
+  max-width: 1080px;
+  margin: 0 auto;
+}
+
+.public-profile-hero {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 1.25rem;
+  border: 1px solid rgba(13, 27, 42, 0.1);
+  border-radius: 24px;
+  background: #ffffff;
+  box-shadow: 0 18px 42px rgba(13, 27, 42, 0.08);
+}
+
+.public-profile-hero h1 {
+  margin: 0.1rem 0;
+  font-family: 'Fraunces', serif;
+  font-size: clamp(2rem, 4vw, 3.3rem);
+  line-height: 1;
+}
+
+.public-profile-hero .primary-button {
+  margin-left: auto;
+}
+
+.profile-summary-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 1rem;
+}
+
+.public-profile-back {
+  justify-self: start;
+}
+
 .shell-loader {
   text-align: center;
   padding: 4rem 1rem;
@@ -982,7 +1163,24 @@ textarea {
   .auth-layout,
   .inbox-layout,
   .form-grid,
-  .profile-artisan-grid {
+  .profile-artisan-grid,
+  .profile-posts-layout {
+    grid-template-columns: 1fr;
+  }
+
+  .profile-posts-hero,
+  .profile-post-footer,
+  .public-profile-hero {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .public-profile-hero .primary-button {
+    margin-left: 0;
+    width: 100%;
+  }
+
+  .profile-summary-grid {
     grid-template-columns: 1fr;
   }
 

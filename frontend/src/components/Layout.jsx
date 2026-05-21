@@ -74,14 +74,11 @@ export default function Layout() {
         <nav className="main-nav">
           <NavLink to="/">Accueil</NavLink>
           <NavLink to="/search">Recherche</NavLink>
-          <NavLink to="/dashboard">Dashboard</NavLink>
+          <NavLink to={user?.role === 'admin' ? '/admin' : '/dashboard'}>Dashboard</NavLink>
           <NavLink to="/inbox" className="inbox-link">
             Inbox
           </NavLink>
           <NavLink to="/profile">Profil</NavLink>
-          {user?.role === 'admin' && (
-            <NavLink to="/admin" className="admin-link">Admin</NavLink>
-          )}
         </nav>
 
         <div className="topbar-actions">
@@ -126,7 +123,7 @@ export default function Layout() {
                 )}
               </div>
 
-              <div className="user-pill">
+              <NavLink to="/profile" className="user-pill">
                 <img src={buildAvatarUrl(user)} alt={user.name} className="avatar-sm" />
                 <div>
                   <span>{user.name}</span>
@@ -135,7 +132,7 @@ export default function Layout() {
                     {user.city ? ` - ${user.city}` : ''}
                   </small>
                 </div>
-              </div>
+              </NavLink>
               <button className="ghost-button" onClick={logout}>
                 Logout
               </button>
