@@ -73,11 +73,13 @@ export default function Layout() {
 
         <nav className="main-nav">
           <NavLink to="/">Accueil</NavLink>
-          <NavLink to="/search">Recherche</NavLink>
+          {user?.role !== 'admin' && <NavLink to="/search">Recherche</NavLink>}
           <NavLink to={user?.role === 'admin' ? '/admin' : '/dashboard'}>Dashboard</NavLink>
-          <NavLink to="/inbox" className="inbox-link">
-            Inbox
-          </NavLink>
+          {user?.role !== 'admin' && (
+            <NavLink to="/inbox" className="inbox-link">
+              Inbox
+            </NavLink>
+          )}
           <NavLink to="/profile">Profil</NavLink>
         </nav>
 

@@ -26,15 +26,24 @@ class DashboardController extends Controller
             ->orWhere('artisan_id', $user->id)
             ->count();
 
+        $stats = [
+            'conversations' => $conversationCount,
+            'quotes' => $quotesCount,
+            'notifications_unread' => $user->notifications()->whereNull('read_at')->count(),
+        ];
+
+        if ($user->role === 'artisan') {
+            $stats['posts'] = $user->artisanProfile ? $user->artisanProfile->posts()->count() : 0;
+            $stats['rating'] = $user->artisanProfile ? floatval($user->artisanProfile->average_rating ?? 0.0) : 0.0;
+            $stats['reviews_count'] = $user->artisanProfile ? $user->artisanProfile->reviews()->count() : 0;
+        } elseif ($user->role === 'admin') {
+            $stats['artisans'] = Artisan::count();
+            $stats['posts'] = Post::count();
+        }
+
         return response()->json([
             'user' => $user,
-            'stats' => [
-                'artisans' => Artisan::count(),
-                'posts' => Post::count(),
-                'conversations' => $conversationCount,
-                'quotes' => $quotesCount,
-                'notifications_unread' => $user->notifications()->whereNull('read_at')->count(),
-            ],
+            'stats' => $stats,
         ]);
     }
 }

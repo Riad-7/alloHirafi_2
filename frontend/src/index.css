@@ -394,13 +394,62 @@ textarea {
 
 .stat-card {
   min-width: 180px;
-  padding: 1rem;
+  padding: 1.25rem;
+  position: relative;
+  overflow: hidden;
+  transition: transform 180ms ease, box-shadow 180ms ease;
+  flex: 1 1 calc(25% - 0.75rem);
+}
+
+.stat-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 16px 36px rgba(13, 27, 42, 0.12);
+}
+
+.stat-card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 0.5rem;
+}
+
+.stat-card-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.2rem;
+  height: 2.2rem;
+  border-radius: 12px;
+  background: var(--brand-soft);
+  color: var(--brand);
+}
+
+.stat-card-icon.icon-accent {
+  background: rgba(245, 158, 11, 0.12);
+  color: var(--accent);
+}
+
+.stat-card-icon.icon-danger {
+  background: rgba(190, 18, 60, 0.12);
+  color: var(--danger);
+}
+
+.stat-card-accent {
+  border-left: 4px solid var(--accent);
+}
+
+.stat-card-danger {
+  border-left: 4px solid var(--danger);
 }
 
 .stat-card strong {
   display: block;
-  font-size: 1.95rem;
-  margin: 0.18rem 0;
+  font-size: 2.1rem;
+  font-weight: 800;
+  margin: 0.2rem 0;
+  color: var(--text);
+  font-family: 'Fraunces', serif;
 }
 
 .card-grid {

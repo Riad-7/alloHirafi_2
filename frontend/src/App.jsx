@@ -38,6 +38,20 @@ function AdminRoute({ children }) {
   return children;
 }
 
+function NonAdminRoute({ children }) {
+  const { user, booting } = useAuth();
+
+  if (booting) {
+    return <div className="shell-loader">Chargement...</div>;
+  }
+
+  if (user && user.role === 'admin') {
+    return <Navigate to="/admin" replace />;
+  }
+
+  return children;
+}
+
 function DashboardRoute() {
   const { user, booting } = useAuth();
 
@@ -61,7 +75,11 @@ export default function App() {
     <Routes>
       <Route element={<Layout />}>
         <Route index element={<HomePage />} />
-        <Route path="/search" element={<SearchPage />} />
+        <Route path="/search" element={
+          <NonAdminRoute>
+            <SearchPage />
+          </NonAdminRoute>
+        } />
         <Route path="/users/:id" element={<UserProfilePage />} />
         <Route
           path="/dashboard"
@@ -71,7 +89,9 @@ export default function App() {
           path="/inbox"
           element={
             <ProtectedRoute>
-              <InboxPage />
+              <NonAdminRoute>
+                <InboxPage />
+              </NonAdminRoute>
             </ProtectedRoute>
           }
         />
