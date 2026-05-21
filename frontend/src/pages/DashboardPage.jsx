@@ -1,6 +1,5 @@
 import { useEffect, useState } from 'react';
 import ArtisanCard from '../components/ArtisanCard.jsx';
-import PostComposer from '../components/PostComposer.jsx';
 import StatCard from '../components/StatCard.jsx';
 import { useAuth } from '../context/AuthContext.jsx';
 import { useToast } from '../context/ToastContext.jsx';
@@ -51,18 +50,6 @@ export default function DashboardPage() {
     };
   }, [toast]);
 
-  const publishPost = async (payload) => {
-    try {
-      await apiRequest('/posts', {
-        method: 'POST',
-        body: payload,
-      });
-      toast.success('Annonce publiee avec succes.');
-      await load();
-    } catch (err) {
-      toast.error(err.message || 'Erreur lors de la publication');
-    }
-  };
   const leaveReview = async (artisan) => {
     try {
       await apiRequest(`/artisans/${artisan.id}/reviews`, {
@@ -182,8 +169,6 @@ export default function DashboardPage() {
 
       <div className="content-grid">
         <div className="stack-layout full-width">
-          {user?.role === 'artisan' ? <PostComposer onSubmit={publishPost} /> : null}
-
           {user?.role === 'client' ? (
             <div className="panel">
               <div className="panel-heading">

@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Link, useParams } from 'react-router-dom';
+import { Link, useParams, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext.jsx';
 import { useToast } from '../context/ToastContext.jsx';
 import { apiRequest } from '../services/api.js';
@@ -8,6 +8,7 @@ import { buildAvatarUrl, buildMediaUrl, formatRole } from '../utils/userPresenta
 
 export default function UserProfilePage() {
   const { id } = useParams();
+  const navigate = useNavigate();
   const { user } = useAuth();
   const toast = useToast();
   const [profile, setProfile] = useState(null);
@@ -58,6 +59,7 @@ export default function UserProfilePage() {
         },
       });
       toast.success(`Conversation creee avec ${profile.name}.`);
+      navigate('/inbox');
     } catch (err) {
       toast.error(err.message || 'Erreur lors de la prise de contact');
     } finally {
