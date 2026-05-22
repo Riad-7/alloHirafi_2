@@ -38,10 +38,10 @@ export function buildAvatarUrl(user) {
   return `https://ui-avatars.com/api/?name=${label}&background=1f6feb&color=ffffff&size=256`;
 }
 
-export function formatRole(role) {
+export function formatRole(role, t = (key) => key) {
   if (role === 'admin') {
-    return 'Admin';
+    return t('common.role.admin');
   }
 
-  return role === 'artisan' ? 'Artisan' : 'Client';
+  return role === 'artisan' ? t('common.role.artisan') : t('common.role.client');
 }

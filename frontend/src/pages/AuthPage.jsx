@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext.jsx';
+import { useLocalization } from '../context/LocalizationContext.jsx';
 import { useToast } from '../context/ToastContext.jsx';
 
 const registerInitial = {
@@ -21,7 +22,8 @@ export default function AuthPage() {
   const { login, register } = useAuth();
   const navigate = useNavigate();
   const toast = useToast();
-  
+  const { t } = useLocalization();
+
   const [mode, setMode] = useState('login');
   const [busy, setBusy] = useState(false);
   const [loginForm, setLoginForm] = useState({ email: 'client@alohirafi.ma', password: 'password' });
@@ -33,10 +35,10 @@ export default function AuthPage() {
 
     try {
       await login(loginForm, '/login');
-      toast.success('Bienvenue !');
+      toast.success(t('auth.toast_welcome'));
       navigate('/dashboard');
     } catch (err) {
-      toast.error(err.message || 'Erreur de connexion');
+      toast.error(err.message || t('auth.toast_login_error'));
     } finally {
       setBusy(false);
     }
@@ -56,10 +58,10 @@ export default function AuthPage() {
       });
 
       await register(formData, '/register');
-      toast.success('Compte cree avec succes !');
+      toast.success(t('auth.toast_register_success'));
       navigate('/dashboard');
     } catch (err) {
-      toast.error(err.message || 'Erreur lors de l\'inscription');
+      toast.error(err.message || t('auth.toast_register_error'));
     } finally {
       setBusy(false);
     }
@@ -69,17 +71,15 @@ export default function AuthPage() {
     <section className="auth-layout">
       <aside className="auth-showcase panel">
         <p className="eyebrow">AloHirafi Access</p>
-        <h2>Espace securise pour clients et artisans</h2>
-        <p className="muted-copy">
-          Breeze + Sanctum gere l&apos;authentification de maniere fiable, avec session protegee et endpoints propres.
-        </p>
+        <h2>{t('auth.title')}</h2>
+        <p className="muted-copy">{t('auth.subtitle')}</p>
         <div className="auth-pill-list">
           <div>
-            <small>Test client</small>
+            <small>{t('common.role.client')}</small>
             <strong>client@alohirafi.ma / password</strong>
           </div>
           <div>
-            <small>Test artisan</small>
+            <small>{t('common.role.artisan')}</small>
             <strong>artisan1@alohirafi.ma / password</strong>
           </div>
         </div>
@@ -88,21 +88,21 @@ export default function AuthPage() {
       <div className="panel auth-panel">
         <div className="segmented auth-segmented">
           <button className={mode === 'login' ? 'active' : ''} onClick={() => setMode('login')} type="button">
-            Login
+            {t('common.login')}
           </button>
           <button className={mode === 'register' ? 'active' : ''} onClick={() => setMode('register')} type="button">
-            Register
+            {t('auth.register_tab')}
           </button>
         </div>
 
         {mode === 'login' ? (
           <form className="form-panel auth-form" onSubmit={submitLogin}>
             <label>
-              Email
+              {t('auth.email')}
               <input value={loginForm.email} onChange={(event) => setLoginForm({ ...loginForm, email: event.target.value })} />
             </label>
             <label>
-              Password
+              {t('auth.password')}
               <input
                 type="password"
                 value={loginForm.password}
@@ -110,22 +110,22 @@ export default function AuthPage() {
               />
             </label>
             <button className="primary-button" disabled={busy}>
-              {busy ? 'Connexion...' : 'Se connecter'}
+              {busy ? t('auth.logging_in') : t('auth.submit_login')}
             </button>
           </form>
         ) : (
           <form className="form-panel auth-form" onSubmit={submitRegister}>
             <div className="form-grid">
               <label>
-                Nom
+                {t('auth.name')}
                 <input value={registerForm.name} onChange={(event) => setRegisterForm({ ...registerForm, name: event.target.value })} />
               </label>
               <label>
-                Email
+                {t('auth.email')}
                 <input value={registerForm.email} onChange={(event) => setRegisterForm({ ...registerForm, email: event.target.value })} />
               </label>
               <label>
-                Password
+                {t('auth.password')}
                 <input
                   type="password"
                   value={registerForm.password}
@@ -133,7 +133,7 @@ export default function AuthPage() {
                 />
               </label>
               <label>
-                Confirm Password
+                {t('auth.password_confirmation')}
                 <input
                   type="password"
                   value={registerForm.password_confirmation}
@@ -141,33 +141,33 @@ export default function AuthPage() {
                 />
               </label>
               <label>
-                Ville
+                {t('auth.city')}
                 <input value={registerForm.city} onChange={(event) => setRegisterForm({ ...registerForm, city: event.target.value })} />
               </label>
               <label>
-                Telephone
+                {t('auth.phone')}
                 <input value={registerForm.phone} onChange={(event) => setRegisterForm({ ...registerForm, phone: event.target.value })} />
               </label>
               <label>
-                Image de profil
+                {t('auth.avatar')}
                 <input type="file" accept="image/*" onChange={(e) => setRegisterForm({ ...registerForm, avatar: e.target.files[0] })} />
               </label>
               <label>
-                Role
+                {t('auth.role')}
                 <select value={registerForm.role} onChange={(event) => setRegisterForm({ ...registerForm, role: event.target.value })}>
-                  <option value="client">Client</option>
-                  <option value="artisan">Artisan</option>
+                  <option value="client">{t('common.role.client')}</option>
+                  <option value="artisan">{t('common.role.artisan')}</option>
                 </select>
               </label>
               {registerForm.role === 'artisan' ? (
                 <label>
-                  Metier
+                  {t('auth.craft')}
                   <input value={registerForm.craft} onChange={(event) => setRegisterForm({ ...registerForm, craft: event.target.value })} />
                 </label>
               ) : null}
               {registerForm.role === 'artisan' ? (
                 <label>
-                  Tarif horaire
+                  {t('auth.hourly_rate')}
                   <input
                     value={registerForm.hourly_rate}
                     onChange={(event) => setRegisterForm({ ...registerForm, hourly_rate: event.target.value })}
@@ -178,13 +178,13 @@ export default function AuthPage() {
 
             {registerForm.role === 'artisan' ? (
               <label>
-                Bio
+                {t('auth.bio')}
                 <textarea value={registerForm.bio} onChange={(event) => setRegisterForm({ ...registerForm, bio: event.target.value })} rows="4" />
               </label>
             ) : null}
 
             <button className="primary-button" disabled={busy}>
-              {busy ? 'Creation...' : 'Creer le compte'}
+              {busy ? t('auth.creating') : t('auth.submit_register')}
             </button>
           </form>
         )}

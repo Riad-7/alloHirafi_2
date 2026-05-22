@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext.jsx';
+import { useLocalization } from '../context/LocalizationContext.jsx';
 import { useToast } from '../context/ToastContext.jsx';
 import { apiRequest } from '../services/api.js';
 import { formatDateTime } from '../utils/date.js';
@@ -8,6 +9,7 @@ import { buildAvatarUrl, formatRole } from '../utils/userPresentation.js';
 
 export default function InboxPage() {
   const { user } = useAuth();
+  const { locale, t } = useLocalization();
   const navigate = useNavigate();
   const toast = useToast();
   const [conversations, setConversations] = useState([]);
@@ -18,7 +20,6 @@ export default function InboxPage() {
 
   const loadConversations = useCallback(async () => {
     const data = await apiRequest('/conversations');
-
     setConversations(data.conversations);
     setSelectedId((current) => current ?? data.conversations[0]?.id ?? null);
   }, []);
@@ -36,7 +37,7 @@ export default function InboxPage() {
         }
       } catch (err) {
         if (!cancelled) {
-          toast.error(err.message || 'Erreur de chargement des conversations');
+          toast.error(err.message || t('inbox.load_error'));
         }
       }
     };
@@ -46,7 +47,7 @@ export default function InboxPage() {
     return () => {
       cancelled = true;
     };
-  }, [toast]);
+  }, [t, toast]);
 
   const selectedConversation = useMemo(
     () => conversations.find((conversation) => conversation.id === selectedId),
@@ -64,11 +65,11 @@ export default function InboxPage() {
       const peer = user.id === conversation.client_id ? conversation.artisan : conversation.client;
       const lastMessage = conversation.messages?.[conversation.messages.length - 1];
 
-      return [peer.name, peer.city, formatRole(peer.role), lastMessage?.body]
+      return [peer.name, peer.city, formatRole(peer.role, t), lastMessage?.body]
         .filter(Boolean)
         .some((value) => value.toLowerCase().includes(query));
     });
-  }, [conversationQuery, conversations, user.id]);
+  }, [conversationQuery, conversations, t, user.id]);
 
   const markConversationRead = useCallback(async (conversationId) => {
     try {
@@ -107,7 +108,7 @@ export default function InboxPage() {
       setBody('');
       await loadConversations();
     } catch (err) {
-      toast.error(err.message || 'Erreur d\'envoi');
+      toast.error(err.message || t('inbox.send_error'));
     }
   };
 
@@ -130,16 +131,16 @@ export default function InboxPage() {
         },
       });
       setQuoteState({ title: '', description: '', amount: '' });
-      toast.success('Devis envoye.');
+      toast.success(t('inbox.quote_sent'));
       await loadConversations();
     } catch (err) {
-      toast.error(err.message || 'Erreur lors de l\'envoi du devis');
+      toast.error(err.message || t('inbox.quote_send_error'));
     }
   };
 
   const updateQuoteStatus = async (statusValue) => {
     if (!selectedConversation?.quotes?.[0]) {
-      toast.error('Aucun devis dans cette conversation.');
+      toast.error(t('inbox.no_quote'));
       return;
     }
 
@@ -148,10 +149,10 @@ export default function InboxPage() {
         method: 'PATCH',
         body: { status: statusValue },
       });
-      toast.success(`Devis ${statusValue === 'accepted' ? 'accepte' : 'refuse'}.`);
+      toast.success(t(statusValue === 'accepted' ? 'inbox.quote_accepted' : 'inbox.quote_rejected'));
       await loadConversations();
     } catch (err) {
-      toast.error(err.message || 'Erreur lors de la mise a jour du devis');
+      toast.error(err.message || t('inbox.quote_update_error'));
     }
   };
 
@@ -169,18 +170,18 @@ export default function InboxPage() {
       <aside className="conversation-list inbox-sidebar">
         <div className="inbox-sidebar-header">
           <div>
-            <p className="eyebrow">Inbox</p>
-            <h3>Conversations</h3>
+            <p className="eyebrow">{t('common.inbox')}</p>
+            <h3>{t('inbox.conversations')}</h3>
           </div>
           <span className="conversation-count">{conversations.length}</span>
         </div>
 
-        <label className="conversation-search" aria-label="Rechercher une conversation">
+        <label className="conversation-search" aria-label={t('inbox.search_label')}>
           <span>⌕</span>
           <input
             value={conversationQuery}
             onChange={(event) => setConversationQuery(event.target.value)}
-            placeholder="Rechercher..."
+            placeholder={t('inbox.search_placeholder')}
           />
         </label>
 
@@ -188,13 +189,13 @@ export default function InboxPage() {
           {conversations.length === 0 ? (
             <div className="empty-state inbox-empty-state">
               <svg xmlns="http://www.w3.org/2000/svg" width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path></svg>
-              <p>Aucune conversation</p>
+              <p>{t('inbox.empty_conversations')}</p>
             </div>
           ) : null}
 
           {conversations.length > 0 && filteredConversations.length === 0 ? (
             <div className="empty-state inbox-empty-state">
-              <p>Aucun resultat</p>
+              <p>{t('inbox.empty_search')}</p>
             </div>
           ) : null}
 
@@ -224,13 +225,13 @@ export default function InboxPage() {
                 <div className="conversation-main">
                   <div className="conversation-title-row">
                     <strong>{peer.name}</strong>
-                    <span>{lastMessage?.created_at ? formatDateTime(lastMessage.created_at) : 'Maintenant'}</span>
+                    <span>{lastMessage?.created_at ? formatDateTime(lastMessage.created_at, locale) : t('common.now')}</span>
                   </div>
                   <div className="conversation-meta-row">
-                    <small>{formatRole(peer.role)}</small>
+                    <small>{formatRole(peer.role, t)}</small>
                     {peer.city ? <small>{peer.city}</small> : null}
                   </div>
-                  <p>{lastMessage?.body || 'Commencez la conversation'}</p>
+                  <p>{lastMessage?.body || t('inbox.start_conversation')}</p>
                 </div>
                 {conversation.unread_messages_count > 0 ? (
                   <span className="notification-badge">{conversation.unread_messages_count}</span>
@@ -245,9 +246,9 @@ export default function InboxPage() {
         <div className="messages-panel">
           <div className="chat-header">
             <div>
-              <p className="eyebrow">Messagerie</p>
-              <h3>{selectedPeer ? selectedPeer.name : 'Selectionnez une conversation'}</h3>
-              <p>{selectedPeer ? `${formatRole(selectedPeer.role)} · ${selectedPeer.city || 'Maroc'}` : 'Vos messages apparaissent ici.'}</p>
+              <p className="eyebrow">{t('common.inbox')}</p>
+              <h3>{selectedPeer ? selectedPeer.name : t('inbox.select_conversation')}</h3>
+              <p>{selectedPeer ? `${formatRole(selectedPeer.role, t)} · ${selectedPeer.city || t('common.morocco')}` : t('inbox.messages_here')}</p>
             </div>
 
             {selectedPeer ? (
@@ -257,7 +258,7 @@ export default function InboxPage() {
                 </Link>
                 <div>
                   <strong>{selectedPeer.name}</strong>
-                  <small>{selectedPeer.city || 'Maroc'}</small>
+                  <small>{selectedPeer.city || t('common.morocco')}</small>
                 </div>
               </div>
             ) : null}
@@ -273,7 +274,7 @@ export default function InboxPage() {
                   <div className="message-content">
                     <div className="message-author">
                       <strong>{message.sender.name}</strong>
-                      <small>{formatDateTime(message.created_at)}</small>
+                      <small>{formatDateTime(message.created_at, locale)}</small>
                     </div>
                     <p>{message.body}</p>
                   </div>
@@ -281,77 +282,77 @@ export default function InboxPage() {
               ))
             ) : (
               <div className="empty-state inbox-empty-state thread-empty-state">
-                <p>{selectedConversation ? 'Aucun message pour le moment.' : 'Choisissez une conversation pour commencer.'}</p>
+                <p>{selectedConversation ? t('inbox.empty_messages') : t('inbox.choose_to_start')}</p>
               </div>
             )}
           </div>
 
           <form className="chat-composer" onSubmit={sendMessage}>
-            <input value={body} onChange={(e) => setBody(e.target.value)} placeholder="Ecrire un message..." />
+            <input value={body} onChange={(e) => setBody(e.target.value)} placeholder={t('inbox.message_placeholder')} />
             <button className="primary-button" disabled={!selectedConversation || !body.trim()}>
-              Envoyer
+              {t('common.send')}
             </button>
           </form>
         </div>
 
         {showSidePanel ? (
           <div className="inbox-side-panel">
-          {activeQuote ? (
-            <div className="quote-card">
-              <div className="panel-heading quote-header">
-                <h3>Devis: {activeQuote.title}</h3>
-                <span className={`status-badge status-${activeQuote.status}`}>
-                  {activeQuote.status === 'pending' ? 'En attente' : activeQuote.status === 'accepted' ? 'Accepte' : 'Refuse'}
-                </span>
-              </div>
-              <div className="quote-body">
-                <p>{activeQuote.description || 'Aucune description detaillee.'}</p>
-                <div className="quote-amount-row">
-                  <span>Montant propose</span>
-                  <strong>{activeQuote.amount} DH</strong>
+            {activeQuote ? (
+              <div className="quote-card">
+                <div className="panel-heading quote-header">
+                  <h3>{t('inbox.quote_title_prefix')}: {activeQuote.title}</h3>
+                  <span className={`status-badge status-${activeQuote.status}`}>
+                    {t(`inbox.quote_status_${activeQuote.status}`)}
+                  </span>
                 </div>
-              </div>
-              
-              {user.role === 'client' && activeQuote.status === 'pending' ? (
-                <div className="quote-actions">
-                  <button className="primary-button" onClick={() => updateQuoteStatus('accepted')}>
-                    Accepter le devis
-                  </button>
-                  <button className="ghost-button" onClick={() => updateQuoteStatus('rejected')}>
-                    Refuser
-                  </button>
+                <div className="quote-body">
+                  <p>{activeQuote.description || t('inbox.quote_no_description')}</p>
+                  <div className="quote-amount-row">
+                    <span>{t('inbox.quote_amount')}</span>
+                    <strong>{activeQuote.amount} DH</strong>
+                  </div>
                 </div>
-              ) : null}
-            </div>
-          ) : null}
 
-          {canSendQuote ? (
-            <form className="form-panel quote-form-panel" onSubmit={sendQuote}>
-              <div className="panel-heading">
-                <div>
-                  <p className="eyebrow">Proposition</p>
-                  <h3>Envoyer un devis</h3>
-                </div>
+                {user.role === 'client' && activeQuote.status === 'pending' ? (
+                  <div className="quote-actions">
+                    <button className="primary-button" onClick={() => updateQuoteStatus('accepted')}>
+                      {t('inbox.accept_quote')}
+                    </button>
+                    <button className="ghost-button" onClick={() => updateQuoteStatus('rejected')}>
+                      {t('inbox.reject_quote')}
+                    </button>
+                  </div>
+                ) : null}
               </div>
-              <label>
-                Titre
-                <input value={quoteState.title} onChange={(e) => setQuoteState({ ...quoteState, title: e.target.value })} required />
-              </label>
-              <label>
-                Montant (DH)
-                <input type="number" min="1" value={quoteState.amount} onChange={(e) => setQuoteState({ ...quoteState, amount: e.target.value })} required />
-              </label>
-              <label>
-                Description
-                <textarea
-                  rows="3"
-                  value={quoteState.description}
-                  onChange={(e) => setQuoteState({ ...quoteState, description: e.target.value })}
-                />
-              </label>
-              <button className="primary-button">Envoyer le devis</button>
-            </form>
-          ) : null}
+            ) : null}
+
+            {canSendQuote ? (
+              <form className="form-panel quote-form-panel" onSubmit={sendQuote}>
+                <div className="panel-heading">
+                  <div>
+                    <p className="eyebrow">{t('inbox.proposal')}</p>
+                    <h3>{t('inbox.send_quote')}</h3>
+                  </div>
+                </div>
+                <label>
+                  {t('post.field_title')}
+                  <input value={quoteState.title} onChange={(e) => setQuoteState({ ...quoteState, title: e.target.value })} required />
+                </label>
+                <label>
+                  {t('inbox.amount_dh')}
+                  <input type="number" min="1" value={quoteState.amount} onChange={(e) => setQuoteState({ ...quoteState, amount: e.target.value })} required />
+                </label>
+                <label>
+                  {t('post.field_description')}
+                  <textarea
+                    rows="3"
+                    value={quoteState.description}
+                    onChange={(e) => setQuoteState({ ...quoteState, description: e.target.value })}
+                  />
+                </label>
+                <button className="primary-button">{t('inbox.send_quote_button')}</button>
+              </form>
+            ) : null}
           </div>
         ) : null}
       </div>

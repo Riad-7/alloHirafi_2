@@ -11,12 +11,14 @@ import AnnonceDetailsPage from './pages/AnnonceDetailsPage.jsx';
 import SearchPage from './pages/SearchPage.jsx';
 import AdminDashboardPage from './pages/AdminDashboardPage.jsx';
 import UserProfilePage from './pages/UserProfilePage.jsx';
+import { useLocalization } from './context/LocalizationContext.jsx';
 
 function ProtectedRoute({ children }) {
   const { user, booting } = useAuth();
+  const { t, ready } = useLocalization();
 
-  if (booting) {
-    return <div className="shell-loader">Chargement...</div>;
+  if (booting || !ready) {
+    return <div className="shell-loader">{t('common.loading')}</div>;
   }
 
   if (!user) {
@@ -28,9 +30,10 @@ function ProtectedRoute({ children }) {
 
 function AdminRoute({ children }) {
   const { user, booting } = useAuth();
+  const { t, ready } = useLocalization();
 
-  if (booting) {
-    return <div className="shell-loader">Chargement...</div>;
+  if (booting || !ready) {
+    return <div className="shell-loader">{t('common.loading')}</div>;
   }
 
   if (!user || user.role !== 'admin') {
@@ -42,9 +45,10 @@ function AdminRoute({ children }) {
 
 function NonAdminRoute({ children }) {
   const { user, booting } = useAuth();
+  const { t, ready } = useLocalization();
 
-  if (booting) {
-    return <div className="shell-loader">Chargement...</div>;
+  if (booting || !ready) {
+    return <div className="shell-loader">{t('common.loading')}</div>;
   }
 
   if (user && user.role === 'admin') {
@@ -56,9 +60,10 @@ function NonAdminRoute({ children }) {
 
 function DashboardRoute() {
   const { user, booting } = useAuth();
+  const { t, ready } = useLocalization();
 
-  if (booting) {
-    return <div className="shell-loader">Chargement...</div>;
+  if (booting || !ready) {
+    return <div className="shell-loader">{t('common.loading')}</div>;
   }
 
   if (!user) {

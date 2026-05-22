@@ -1,17 +1,15 @@
 import { useEffect, useState } from 'react';
-import { Navigate, useNavigate } from 'react-router-dom';
+import { Navigate } from 'react-router-dom';
 import PostComposer from '../components/PostComposer.jsx';
+import PostCard from '../components/PostCard.jsx';
 import { useAuth } from '../context/AuthContext.jsx';
+import { useLocalization } from '../context/LocalizationContext.jsx';
 import { useToast } from '../context/ToastContext.jsx';
 import { apiRequest } from '../services/api.js';
-import { formatDateTime } from '../utils/date.js';
-import { buildMediaUrl } from '../utils/userPresentation.js';
-import PostCard from '../components/PostCard.jsx';
-
-
 
 export default function AnnoncesPage() {
   const { user, refreshUser } = useAuth();
+  const { t } = useLocalization();
   const toast = useToast();
   const [posts, setPosts] = useState([]);
   const [editingPost, setEditingPost] = useState(null);
@@ -35,37 +33,37 @@ export default function AnnoncesPage() {
       if (editingPost) {
         payload.append('_method', 'PUT');
         await apiRequest(`/posts/${editingPost.id}`, {
-          method: 'POST', // Use POST with _method=PUT for multipart/form-data
+          method: 'POST',
           body: payload,
         });
-        toast.success('Annonce mise à jour avec succès.');
+        toast.success(t('posts.update_success'));
         setEditingPost(null);
       } else {
         await apiRequest('/posts', {
           method: 'POST',
           body: payload,
         });
-        toast.success('Annonce publiée avec succès.');
+        toast.success(t('posts.publish_success'));
       }
-      
+
       const profileData = await apiRequest('/profile');
       setPosts(profileData.posts ?? []);
     } catch (err) {
-      toast.error(err.message || 'Erreur lors de l\'enregistrement');
+      toast.error(err.message || t('posts.save_error'));
     }
   };
 
   const handleDelete = async (post) => {
-    if (!window.confirm('Es-tu sûr de vouloir supprimer cette annonce ?')) return;
-    
+    if (!window.confirm(t('posts.delete_confirm'))) return;
+
     try {
       await apiRequest(`/posts/${post.id}`, {
         method: 'DELETE',
       });
       setPosts(posts.filter((p) => p.id !== post.id));
-      toast.success('Annonce supprimée avec succès.');
+      toast.success(t('posts.delete_success'));
     } catch (err) {
-      toast.error(err.message || 'Erreur lors de la suppression');
+      toast.error(err.message || t('posts.delete_error'));
     }
   };
 
@@ -77,20 +75,20 @@ export default function AnnoncesPage() {
     <section className="stack-layout profile-layout" style={{ maxWidth: '800px', margin: '0 auto', paddingTop: '2rem' }}>
       <div className="profile-posts-hero" style={{ marginBottom: '2rem' }}>
         <div>
-          <p className="eyebrow">Mes Annonces</p>
-          <h2>Ton espace pro</h2>
-          <p className="muted-copy">Crée des annonces attrayantes pour présenter tes services professionnels.</p>
+          <p className="eyebrow">{t('posts.hero_eyebrow')}</p>
+          <h2>{t('posts.hero_title')}</h2>
+          <p className="muted-copy">{t('posts.hero_body')}</p>
         </div>
-        <span className="status-pill">{posts.length} annonce{posts.length > 1 ? 's' : ''}</span>
+        <span className="status-pill">{t('posts.count_label', { count: posts.length })}</span>
       </div>
 
       <div className="profile-posts-layout" style={{ display: 'flex', flexDirection: 'column', gap: '2rem' }}>
         {editingPost ? (
           <div className="edit-modal-wrapper" style={{ marginBottom: '2rem' }}>
-            <PostComposer 
-              initialData={editingPost} 
-              onSubmit={publishPost} 
-              onCancel={() => setEditingPost(null)} 
+            <PostComposer
+              initialData={editingPost}
+              onSubmit={publishPost}
+              onCancel={() => setEditingPost(null)}
             />
           </div>
         ) : (
@@ -100,14 +98,14 @@ export default function AnnoncesPage() {
         <div className="profile-posts-list">
           {posts.length === 0 ? (
             <div className="empty-state profile-posts-empty">
-              <h4>Aucune annonce publiée</h4>
-              <p>Ajoute ta première annonce avec une image pour attirer plus de clients.</p>
+              <h4>{t('posts.empty_title')}</h4>
+              <p>{t('posts.empty_body')}</p>
             </div>
           ) : (
             posts.map((post) => (
-              <PostCard 
-                key={post.id} 
-                post={post} 
+              <PostCard
+                key={post.id}
+                post={post}
                 onEdit={(p) => {
                   setEditingPost(p);
                   window.scrollTo({ top: 0, behavior: 'smooth' });

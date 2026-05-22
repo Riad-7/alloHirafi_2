@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Link, useParams, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext.jsx';
+import { useLocalization } from '../context/LocalizationContext.jsx';
 import { useToast } from '../context/ToastContext.jsx';
 import { apiRequest } from '../services/api.js';
 import { formatDateTime } from '../utils/date.js';
@@ -10,6 +11,7 @@ export default function UserProfilePage() {
   const { id } = useParams();
   const navigate = useNavigate();
   const { user } = useAuth();
+  const { locale, t } = useLocalization();
   const toast = useToast();
   const [profile, setProfile] = useState(null);
   const [busy, setBusy] = useState(false);
@@ -26,7 +28,7 @@ export default function UserProfilePage() {
         }
       } catch (err) {
         if (!cancelled) {
-          toast.error(err.message || 'Profil introuvable.');
+          toast.error(err.message || t('public_profile.not_found'));
         }
       }
     };
@@ -36,16 +38,16 @@ export default function UserProfilePage() {
     return () => {
       cancelled = true;
     };
-  }, [id, toast]);
+  }, [id, t, toast]);
 
   const contactProfile = async () => {
     if (!user) {
-      toast.error('Connecte-toi pour envoyer un message.');
+      toast.error(t('public_profile.login_required'));
       return;
     }
 
     if (!profile || profile.role !== 'artisan') {
-      toast.error('Tu peux contacter seulement les artisans.');
+      toast.error(t('public_profile.artisan_only'));
       return;
     }
 
@@ -55,20 +57,20 @@ export default function UserProfilePage() {
         method: 'POST',
         body: {
           artisan_id: profile.id,
-          message: `Bonjour ${profile.name}, je viens depuis ton profil AloHirafi.`,
+          message: t('public_profile.contact_message', { name: profile.name }),
         },
       });
-      toast.success(`Conversation creee avec ${profile.name}.`);
+      toast.success(t('public_profile.contact_success', { name: profile.name }));
       navigate('/inbox');
     } catch (err) {
-      toast.error(err.message || 'Erreur lors de la prise de contact');
+      toast.error(err.message || t('public_profile.contact_error'));
     } finally {
       setBusy(false);
     }
   };
 
   if (!profile) {
-    return <div className="shell-loader">Chargement du profil...</div>;
+    return <div className="shell-loader">{t('public_profile.loading')}</div>;
   }
 
   const artisan = profile.artisan_profile;
@@ -79,13 +81,13 @@ export default function UserProfilePage() {
       <div className="public-profile-hero">
         <img src={buildAvatarUrl(profile)} alt={profile.name} className="avatar-lg" />
         <div>
-          <p className="eyebrow">{formatRole(profile.role)}</p>
+          <p className="eyebrow">{formatRole(profile.role, t)}</p>
           <h1>{profile.name}</h1>
-          <p className="muted-copy">{profile.city || 'Maroc'}</p>
+          <p className="muted-copy">{profile.city || t('common.morocco')}</p>
         </div>
         {profile.role === 'artisan' && user?.id !== profile.id ? (
           <button className="primary-button" onClick={contactProfile} disabled={busy}>
-            {busy ? 'Ouverture...' : 'Contacter'}
+            {busy ? t('public_profile.opening') : t('common.contact')}
           </button>
         ) : null}
       </div>
@@ -93,17 +95,17 @@ export default function UserProfilePage() {
       {artisan ? (
         <div className="profile-summary-grid">
           <article className="stat-card">
-            <span>Metier</span>
+            <span>{t('auth.craft')}</span>
             <strong>{artisan.craft}</strong>
           </article>
           <article className="stat-card">
-            <span>Tarif</span>
+            <span>{t('public_profile.rate')}</span>
             <strong>{artisan.hourly_rate} DH</strong>
-            <small>/heure</small>
+            <small>{t('public_profile.per_hour')}</small>
           </article>
           <article className="stat-card">
-            <span>Experience</span>
-            <strong>{artisan.years_experience} ans</strong>
+            <span>{t('public_profile.experience')}</span>
+            <strong>{artisan.years_experience} {t('artisan.years')}</strong>
           </article>
         </div>
       ) : null}
@@ -111,7 +113,7 @@ export default function UserProfilePage() {
       {artisan?.bio ? (
         <section className="panel">
           <div className="panel-heading">
-            <h3>A propos</h3>
+            <h3>{t('public_profile.about')}</h3>
           </div>
           <p className="muted-copy">{artisan.bio}</p>
         </section>
@@ -120,8 +122,8 @@ export default function UserProfilePage() {
       {posts.length > 0 ? (
         <section className="panel">
           <div className="panel-heading">
-            <h3>Annonces</h3>
-            <p>Services publies par {profile.name}.</p>
+            <h3>{t('common.ads')}</h3>
+            <p>{t('public_profile.posts_by', { name: profile.name })}</p>
           </div>
           <div className="profile-posts-list">
             {posts.map((post) => (
@@ -131,7 +133,7 @@ export default function UserProfilePage() {
                     <img src={buildMediaUrl(post.images[0].image_url)} alt={post.title} />
                   ) : (
                     <div className="profile-post-placeholder">
-                      <span>Image</span>
+                      <span>{t('common.image')}</span>
                     </div>
                   )}
                   <span className="profile-post-city">{post.city}</span>
@@ -142,8 +144,8 @@ export default function UserProfilePage() {
                     <p>{post.description}</p>
                   </div>
                   <div className="profile-post-footer">
-                    <strong>{post.price_from || post.price_to ? `${post.price_from ?? '0'} - ${post.price_to ?? post.price_from} DH` : 'Prix sur devis'}</strong>
-                    <span>{post.available_at ? formatDateTime(post.available_at) : 'Disponible'}</span>
+                    <strong>{post.price_from || post.price_to ? `${post.price_from ?? '0'} - ${post.price_to ?? post.price_from} DH` : t('common.price_on_quote')}</strong>
+                    <span>{post.available_at ? formatDateTime(post.available_at, locale) : t('common.available')}</span>
                   </div>
                 </div>
               </article>
@@ -153,7 +155,7 @@ export default function UserProfilePage() {
       ) : null}
 
       <Link to="/search" className="ghost-button public-profile-back">
-        Retour a la recherche
+        {t('public_profile.back_to_search')}
       </Link>
     </section>
   );

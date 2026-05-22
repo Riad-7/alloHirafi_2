@@ -12,9 +12,24 @@ function normalizeLocalUrl(url) {
 const API_URL = normalizeLocalUrl(configuredApiUrl);
 const BACKEND_URL = normalizeLocalUrl(import.meta.env.VITE_BACKEND_URL ?? API_URL.replace(/\/api\/?$/, ''));
 const SAFE_METHODS = new Set(['GET', 'HEAD', 'OPTIONS']);
+const LOCALE_STORAGE_KEY = 'alohirafi.locale';
 
 let csrfReady = false;
 let csrfPromise = null;
+
+export function getCurrentLocale() {
+  if (typeof window === 'undefined') {
+    return 'fr';
+  }
+
+  return window.localStorage.getItem(LOCALE_STORAGE_KEY) || 'fr';
+}
+
+export function setCurrentLocale(locale) {
+  if (typeof window !== 'undefined') {
+    window.localStorage.setItem(LOCALE_STORAGE_KEY, locale);
+  }
+}
 
 function readCookie(name) {
   const cookie = document.cookie
@@ -66,6 +81,7 @@ async function requestJson(url, options = {}, retriedAfterCsrfMismatch = false) 
 
   const headers = {
     Accept: 'application/json',
+    'X-Locale': getCurrentLocale(),
     ...(options.headers ?? {}),
   };
 

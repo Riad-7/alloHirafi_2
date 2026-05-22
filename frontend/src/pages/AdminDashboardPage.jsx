@@ -1,11 +1,13 @@
 import { useCallback, useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
+import { useLocalization } from '../context/LocalizationContext.jsx';
 import { useToast } from '../context/ToastContext.jsx';
 import { apiRequest } from '../services/api.js';
 import StatCard from '../components/StatCard.jsx';
-import { buildAvatarUrl } from '../utils/userPresentation.js';
+import { buildAvatarUrl, formatRole } from '../utils/userPresentation.js';
 
 export default function AdminDashboardPage() {
+  const { locale, t } = useLocalization();
   const toast = useToast();
   const [stats, setStats] = useState({ total_users: 0, total_clients: 0, total_artisans: 0, pending_verifications: 0 });
   const [pendingRequests, setPendingRequests] = useState([]);
@@ -29,11 +31,11 @@ export default function AdminDashboardPage() {
       setPendingRequests(requestsData);
       setUsers(usersData.users ?? []);
     } catch {
-      toast.error('Erreur lors du chargement des données.');
+      toast.error(t('admin.load_error'));
     } finally {
       setLoading(false);
     }
-  }, [toast, userRoleFilter]);
+  }, [t, toast, userRoleFilter]);
 
   useEffect(() => {
     const timeoutId = window.setTimeout(fetchData, 0);
@@ -45,7 +47,7 @@ export default function AdminDashboardPage() {
     setProcessingId(id);
     try {
       await apiRequest(`/admin/verifications/${id}/approve`, { method: 'POST' });
-      toast.success('Vérification approuvée.');
+      toast.success(t('admin.approve_success'));
       fetchData();
     } catch (err) {
       toast.error(err.message);
@@ -55,15 +57,15 @@ export default function AdminDashboardPage() {
   };
 
   const handleReject = async () => {
-    if (!rejectionNote.trim()) return toast.error('Veuillez fournir un motif de rejet.');
-    
+    if (!rejectionNote.trim()) return toast.error(t('admin.rejection_reason_required'));
+
     setProcessingId(selectedRequest.id);
     try {
       await apiRequest(`/admin/verifications/${selectedRequest.id}/reject`, {
         method: 'POST',
         body: { note: rejectionNote },
       });
-      toast.success('Vérification rejetée.');
+      toast.success(t('admin.reject_success'));
       setShowRejectionModal(false);
       setRejectionNote('');
       fetchData();
@@ -85,34 +87,28 @@ export default function AdminDashboardPage() {
     window.open(`${API_URL}/admin/verifications/${id}/document`, '_blank');
   };
 
-  if (loading) return <div className="shell-loader">Chargement du dashboard...</div>;
+  if (loading) return <div className="shell-loader">{t('admin.loading')}</div>;
 
   return (
     <div className="stack-layout admin-dashboard">
       <header className="dashboard-hero">
         <div>
-          <p className="eyebrow">Administration</p>
-          <h1>Tableau de bord</h1>
+          <p className="eyebrow">{t('admin.eyebrow')}</p>
+          <h1>{t('common.dashboard')}</h1>
         </div>
       </header>
 
       <div className="stats-row">
+        <StatCard label={t('admin.stats.users')} value={stats.total_users} />
+        <StatCard label={t('admin.stats.clients')} value={stats.total_clients} />
         <StatCard
-          label="Utilisateurs"
-          value={stats.total_users}
-        />
-        <StatCard
-          label="Clients"
-          value={stats.total_clients}
-        />
-        <StatCard 
-          label="Artisans inscrits" 
-          value={stats.total_artisans} 
+          label={t('admin.stats.artisans')}
+          value={stats.total_artisans}
           icon={<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg>}
         />
-        <StatCard 
-          label="Vérifications en attente" 
-          value={stats.pending_verifications} 
+        <StatCard
+          label={t('admin.stats.pending_verifications')}
+          value={stats.pending_verifications}
           color="accent"
           icon={<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg>}
         />
@@ -121,18 +117,18 @@ export default function AdminDashboardPage() {
       <section className="panel requests-panel">
         <div className="panel-heading">
           <div>
-            <h3>Utilisateurs</h3>
-            <p>Clients, artisans et admins visibles seulement par l'administration.</p>
+            <h3>{t('admin.users_title')}</h3>
+            <p>{t('admin.users_body')}</p>
           </div>
           <div className="segmented">
             <button className={userRoleFilter === 'client' ? 'active' : ''} onClick={() => setUserRoleFilter('client')} type="button">
-              Clients
+              {t('common.role.client')}
             </button>
             <button className={userRoleFilter === 'artisan' ? 'active' : ''} onClick={() => setUserRoleFilter('artisan')} type="button">
-              Artisans
+              {t('common.role.artisan')}
             </button>
             <button className={userRoleFilter === 'admin' ? 'active' : ''} onClick={() => setUserRoleFilter('admin')} type="button">
-              Admins
+              {t('common.role.admin')}
             </button>
           </div>
         </div>
@@ -141,11 +137,11 @@ export default function AdminDashboardPage() {
           <table className="admin-table">
             <thead>
               <tr>
-                <th>Utilisateur</th>
-                <th>Role</th>
-                <th>Ville</th>
-                <th>Telephone</th>
-                <th>Date</th>
+                <th>{t('admin.table_user')}</th>
+                <th>{t('auth.role')}</th>
+                <th>{t('auth.city')}</th>
+                <th>{t('auth.phone')}</th>
+                <th>{t('admin.table_date')}</th>
               </tr>
             </thead>
             <tbody>
@@ -160,10 +156,10 @@ export default function AdminDashboardPage() {
                       </div>
                     </Link>
                   </td>
-                  <td>{item.role}</td>
-                  <td>{item.city || 'Non precisee'}</td>
+                  <td>{formatRole(item.role, t)}</td>
+                  <td>{item.city || t('common.not_specified')}</td>
                   <td>{item.phone || '-'}</td>
-                  <td>{new Date(item.created_at).toLocaleDateString()}</td>
+                  <td>{new Date(item.created_at).toLocaleDateString(locale === 'ar' ? 'ar-MA' : 'fr-MA')}</td>
                 </tr>
               ))}
             </tbody>
@@ -173,23 +169,23 @@ export default function AdminDashboardPage() {
 
       <section className="panel requests-panel">
         <div className="panel-heading">
-          <h3>Demandes de vérification</h3>
-          <p>Examinez les documents et validez les comptes artisans.</p>
+          <h3>{t('admin.verifications_title')}</h3>
+          <p>{t('admin.verifications_body')}</p>
         </div>
 
         {pendingRequests.length === 0 ? (
           <div className="empty-state">
-            <p>Aucune demande en attente.</p>
+            <p>{t('admin.no_pending')}</p>
           </div>
         ) : (
           <div className="admin-table-wrapper">
             <table className="admin-table">
               <thead>
                 <tr>
-                  <th>Artisan</th>
-                  <th>Type</th>
-                  <th>Date</th>
-                  <th>Actions</th>
+                  <th>{t('admin.table_artisan')}</th>
+                  <th>{t('admin.table_type')}</th>
+                  <th>{t('admin.table_date')}</th>
+                  <th>{t('admin.table_actions')}</th>
                 </tr>
               </thead>
               <tbody>
@@ -205,25 +201,25 @@ export default function AdminDashboardPage() {
                       </Link>
                     </td>
                     <td>{req.document_type.toUpperCase()}</td>
-                    <td>{new Date(req.created_at).toLocaleDateString()}</td>
+                    <td>{new Date(req.created_at).toLocaleDateString(locale === 'ar' ? 'ar-MA' : 'fr-MA')}</td>
                     <td>
                       <div className="table-actions">
                         <button className="ghost-button-sm" onClick={() => viewDocument(req.id)}>
-                          Voir Doc
+                          {t('admin.view_doc')}
                         </button>
-                        <button 
-                          className="primary-button-sm" 
+                        <button
+                          className="primary-button-sm"
                           onClick={() => handleApprove(req.id)}
                           disabled={processingId === req.id}
                         >
-                          Approuver
+                          {t('admin.approve')}
                         </button>
-                        <button 
-                          className="danger-button-sm" 
+                        <button
+                          className="danger-button-sm"
                           onClick={() => openRejectionModal(req)}
                           disabled={processingId === req.id}
                         >
-                          Rejeter
+                          {t('admin.reject')}
                         </button>
                       </div>
                     </td>
@@ -239,23 +235,23 @@ export default function AdminDashboardPage() {
         <div className="modal-overlay">
           <div className="panel modal-content">
             <div className="panel-heading">
-              <h3>Rejeter la demande</h3>
-              <p>Expliquez à l'artisan pourquoi sa demande est refusée.</p>
+              <h3>{t('admin.reject_modal_title')}</h3>
+              <p>{t('admin.reject_modal_body')}</p>
             </div>
-            <textarea 
-              value={rejectionNote} 
+            <textarea
+              value={rejectionNote}
               onChange={(e) => setRejectionNote(e.target.value)}
-              placeholder="Ex: Document illisible, Nom ne correspond pas..."
+              placeholder={t('admin.reject_placeholder')}
               rows="4"
             />
             <div className="modal-actions">
-              <button className="ghost-button" onClick={() => setShowRejectionModal(false)}>Annuler</button>
-              <button 
-                className="primary-button danger" 
+              <button className="ghost-button" onClick={() => setShowRejectionModal(false)}>{t('common.cancel')}</button>
+              <button
+                className="primary-button danger"
                 onClick={handleReject}
                 disabled={processingId !== null}
               >
-                Confirmer le rejet
+                {t('admin.confirm_reject')}
               </button>
             </div>
           </div>

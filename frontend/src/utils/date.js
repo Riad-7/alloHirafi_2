@@ -1,4 +1,4 @@
-export function formatDateTime(value) {
+export function formatDateTime(value, locale = 'fr') {
   if (!value) {
     return '';
   }
@@ -8,7 +8,7 @@ export function formatDateTime(value) {
     return '';
   }
 
-  return new Intl.DateTimeFormat('fr-MA', {
+  return new Intl.DateTimeFormat(locale === 'ar' ? 'ar-MA' : 'fr-MA', {
     dateStyle: 'short',
     timeStyle: 'short',
   }).format(date);

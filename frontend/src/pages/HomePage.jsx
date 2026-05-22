@@ -1,37 +1,36 @@
 import { Link } from 'react-router-dom';
-
-const highlights = [
-  'Recherche d artisans par ville, metier et disponibilite',
-  'Messagerie client-artisan avec conversations persistantes',
-  'Devis, avis et notifications pour creer une vraie relation',
-];
+import { useLocalization } from '../context/LocalizationContext.jsx';
 
 export default function HomePage() {
+  const { t } = useLocalization();
+  const highlights = [
+    t('home.highlight_search'),
+    t('home.highlight_inbox'),
+    t('home.highlight_quotes'),
+  ];
+
   return (
     <section className="hero-layout">
       <div className="hero-card hero-copy">
-        <p className="eyebrow">Marketplace humain pour le terrain marocain</p>
-        <h1>Trouver un artisan fiable doit ressembler a une vraie discussion, pas a une liste froide.</h1>
-        <p className="muted-copy">
-          AloHirafi connecte clients et artisans avec profils riches, annonces, devis et messages. Le socle est
-          pense pour devenir un projet PFE solide et deployable.
-        </p>
+        <p className="eyebrow">{t('home.eyebrow')}</p>
+        <h1>{t('home.title')}</h1>
+        
 
         <div className="hero-actions">
           <Link to="/search" className="primary-button">
-            Explorer les artisans
+            {t('home.cta_search')}
           </Link>
           <Link to="/auth" className="ghost-button">
-            Creer un compte
+            {t('home.cta_register')}
           </Link>
         </div>
       </div>
 
       <div className="hero-card hero-side">
         <div className="signal-card">
-          <span>Interaction humaine</span>
-          <strong>Message, devis, avis</strong>
-          <p>Le produit tourne autour de la confiance et du suivi.</p>
+          <span>{t('home.signal_label')}</span>
+          <strong>{t('home.signal_title')}</strong>
+          <p>{t('home.signal_body')}</p>
         </div>
 
         <div className="feature-list">

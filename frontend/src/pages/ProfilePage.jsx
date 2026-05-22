@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useAuth } from '../context/AuthContext.jsx';
+import { useLocalization } from '../context/LocalizationContext.jsx';
 import { useToast } from '../context/ToastContext.jsx';
 import { apiRequest } from '../services/api.js';
 import { buildAvatarUrl, formatRole } from '../utils/userPresentation.js';
@@ -25,6 +26,7 @@ function buildProfileForm(user) {
 
 export default function ProfilePage() {
   const { user, refreshUser } = useAuth();
+  const { t } = useLocalization();
   const toast = useToast();
   const [form, setForm] = useState(buildProfileForm(user));
   const [passwordForm, setPasswordForm] = useState({
@@ -58,7 +60,7 @@ export default function ProfilePage() {
 
     try {
       const formData = new FormData();
-      formData.append('_method', 'PATCH'); // Laravel requires _method=PATCH for FormData
+      formData.append('_method', 'PATCH');
       formData.append('name', form.name);
       formData.append('email', form.email);
       if (form.city) formData.append('city', form.city);
@@ -75,14 +77,14 @@ export default function ProfilePage() {
       }
 
       await apiRequest('/profile', {
-        method: 'POST', // Use POST with _method=PATCH for multipart/form-data in Laravel
+        method: 'POST',
         body: formData,
       });
 
       await refreshUser();
-      toast.success('Profil mis a jour avec succes.');
+      toast.success(t('profile.save_success'));
     } catch (err) {
-      toast.error(err.message || 'Erreur lors de la mise a jour');
+      toast.error(err.message || t('profile.save_error'));
     } finally {
       setBusy(false);
     }
@@ -103,9 +105,9 @@ export default function ProfilePage() {
         password: '',
         password_confirmation: '',
       });
-      toast.success('Mot de passe mis a jour.');
+      toast.success(t('profile.password_success'));
     } catch (err) {
-      toast.error(err.message || 'Erreur lors du changement de mot de passe');
+      toast.error(err.message || t('profile.password_error'));
     } finally {
       setPasswordBusy(false);
     }
@@ -117,43 +119,43 @@ export default function ProfilePage() {
         <div className="profile-hero-user">
           <img src={avatarPreview} alt={form.name || user?.name} className="avatar-lg" />
           <div>
-            <p className="eyebrow">Profil</p>
-            <h2>{form.name || 'Mon compte'}</h2>
+            <p className="eyebrow">{t('common.profile')}</p>
+            <h2>{form.name || t('profile.my_account')}</h2>
             <p className="muted-copy">
-              {formatRole(user?.role)} - {form.city || 'Maroc'}
+              {formatRole(user?.role, t)} - {form.city || t('common.morocco')}
             </p>
           </div>
         </div>
-        <div className="status-pill">Compte securise</div>
+        <div className="status-pill">{t('profile.secure_account')}</div>
       </div>
 
       <div className="two-column profile-columns">
         <div className="stack-layout">
           <form className="panel form-panel" onSubmit={updateProfile}>
             <div className="panel-heading">
-              <h3>Informations personnelles</h3>
-              <p>Garde ton profil clair et professionnel.</p>
+              <h3>{t('profile.personal_info')}</h3>
+              <p>{t('profile.personal_info_body')}</p>
             </div>
 
             <div className="form-grid">
               <label>
-                Nom complet
+                {t('profile.full_name')}
                 <input value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} required />
               </label>
               <label>
-                Email
+                {t('auth.email')}
                 <input type="email" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} required />
               </label>
               <label>
-                Ville
+                {t('auth.city')}
                 <input value={form.city} onChange={(e) => setForm({ ...form, city: e.target.value })} />
               </label>
               <label>
-                Telephone
+                {t('auth.phone')}
                 <input value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value })} />
               </label>
               <label className="profile-full-row">
-                Image de profil
+                {t('auth.avatar')}
                 <input type="file" accept="image/*" onChange={(e) => setForm({ ...form, avatarFile: e.target.files[0] })} />
               </label>
             </div>
@@ -161,7 +163,7 @@ export default function ProfilePage() {
             {user?.role === 'artisan' ? (
               <div className="profile-artisan-grid">
                 <label>
-                  Metier
+                  {t('auth.craft')}
                   <input
                     value={form.artisan_profile.craft}
                     onChange={(e) =>
@@ -174,7 +176,7 @@ export default function ProfilePage() {
                   />
                 </label>
                 <label>
-                  Tarif horaire (DH)
+                  {t('profile.hourly_rate_dh')}
                   <input
                     type="number"
                     min="0"
@@ -188,7 +190,7 @@ export default function ProfilePage() {
                   />
                 </label>
                 <label>
-                  Experience (ans)
+                  {t('profile.experience_years')}
                   <input
                     type="number"
                     min="0"
@@ -202,7 +204,7 @@ export default function ProfilePage() {
                   />
                 </label>
                 <label>
-                  Rayon service (km)
+                  {t('profile.service_radius')}
                   <input
                     type="number"
                     min="0"
@@ -216,7 +218,7 @@ export default function ProfilePage() {
                   />
                 </label>
                 <label className="profile-full-row">
-                  Bio artisan
+                  {t('profile.artisan_bio')}
                   <textarea
                     rows="4"
                     value={form.artisan_profile.bio}
@@ -239,13 +241,13 @@ export default function ProfilePage() {
                       })
                     }
                   />
-                  Disponible pour nouveaux clients
+                  {t('profile.available_for_clients')}
                 </label>
               </div>
             ) : null}
 
             <button className="primary-button" disabled={busy}>
-              {busy ? 'Mise a jour...' : 'Sauvegarder le profil'}
+              {busy ? t('profile.saving') : t('profile.save_button')}
             </button>
           </form>
 
@@ -256,11 +258,11 @@ export default function ProfilePage() {
 
         <form className="panel form-panel" onSubmit={updatePassword}>
           <div className="panel-heading">
-            <h3>Securite du compte</h3>
-            <p>Change ton mot de passe regulierement.</p>
+            <h3>{t('profile.account_security')}</h3>
+            <p>{t('profile.account_security_body')}</p>
           </div>
           <label>
-            Mot de passe actuel
+            {t('profile.current_password')}
             <input
               type="password"
               value={passwordForm.current_password}
@@ -269,7 +271,7 @@ export default function ProfilePage() {
             />
           </label>
           <label>
-            Nouveau mot de passe
+            {t('profile.new_password')}
             <input
               type="password"
               value={passwordForm.password}
@@ -278,7 +280,7 @@ export default function ProfilePage() {
             />
           </label>
           <label>
-            Confirmation mot de passe
+            {t('auth.password_confirmation')}
             <input
               type="password"
               value={passwordForm.password_confirmation}
@@ -287,7 +289,7 @@ export default function ProfilePage() {
             />
           </label>
           <button className="ghost-button" disabled={passwordBusy}>
-            {passwordBusy ? 'Mise a jour...' : 'Mettre a jour le mot de passe'}
+            {passwordBusy ? t('profile.saving') : t('profile.password_button')}
           </button>
         </form>
       </div>
@@ -296,6 +298,7 @@ export default function ProfilePage() {
 }
 
 function VerificationSection({ user, refreshUser }) {
+  const { t } = useLocalization();
   const toast = useToast();
   const [busy, setBusy] = useState(false);
   const [docType, setDocType] = useState('cin');
@@ -303,7 +306,7 @@ function VerificationSection({ user, refreshUser }) {
 
   const handleVerify = async (e) => {
     e.preventDefault();
-    if (!docFile) return toast.error('Veuillez selectionner un document.');
+    if (!docFile) return toast.error(t('profile.verification_select_document'));
 
     setBusy(true);
     try {
@@ -317,7 +320,7 @@ function VerificationSection({ user, refreshUser }) {
       });
 
       await refreshUser();
-      toast.success('Demande de verification envoyee.');
+      toast.success(t('profile.verification_sent'));
     } catch (err) {
       toast.error(err.message);
     } finally {
@@ -329,12 +332,12 @@ function VerificationSection({ user, refreshUser }) {
     return (
       <div className="panel verification-panel success-status">
         <div className="panel-heading">
-          <h3>Vérification du compte</h3>
-          <p>Ton compte est officiellement vérifié.</p>
+          <h3>{t('profile.verification_title')}</h3>
+          <p>{t('profile.verification_verified_body')}</p>
         </div>
         <div className="success-box verification-badge-row">
           <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="#3b82f6" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"></circle><polyline points="9 11 12 14 15 9"></polyline></svg>
-          <strong>Compte Vérifié</strong>
+          <strong>{t('profile.verified_account')}</strong>
         </div>
       </div>
     );
@@ -344,12 +347,12 @@ function VerificationSection({ user, refreshUser }) {
     return (
       <div className="panel verification-panel pending-status">
         <div className="panel-heading">
-          <h3>Vérification du compte</h3>
-          <p>Nous examinons tes documents.</p>
+          <h3>{t('profile.verification_title')}</h3>
+          <p>{t('profile.verification_pending_body')}</p>
         </div>
         <div className="info-box">
-          <p><strong>Vérification en cours...</strong></p>
-          <small className="muted-copy">Cela prend generalement 24h a 48h.</small>
+          <p><strong>{t('profile.verification_in_progress')}</strong></p>
+          <small className="muted-copy">{t('profile.verification_delay')}</small>
         </div>
       </div>
     );
@@ -358,31 +361,31 @@ function VerificationSection({ user, refreshUser }) {
   return (
     <div className="panel verification-panel">
       <div className="panel-heading">
-        <h3>Vérification du compte</h3>
-        <p>Deviens un artisan vérifié pour gagner plus de confiance.</p>
+        <h3>{t('profile.verification_title')}</h3>
+        <p>{t('profile.verification_intro')}</p>
       </div>
 
       {user.verification_status === 'rejected' && (
         <div className="error-box rejection-note">
-          <strong>Demande rejetée</strong>
-          <p>{user.rejection_note || 'Tes documents ne correspondent pas a nos criteres.'}</p>
+          <strong>{t('profile.verification_rejected')}</strong>
+          <p>{user.rejection_note || t('profile.verification_rejected_body')}</p>
         </div>
       )}
 
       <form className="verification-form stack-layout" onSubmit={handleVerify}>
         <label>
-          Type de document
+          {t('profile.document_type')}
           <select value={docType} onChange={(e) => setDocType(e.target.value)} className="form-select">
-            <option value="cin">Carte d'Identité Nationale (CIN)</option>
-            <option value="diploma">Diplôme ou Certification</option>
+            <option value="cin">{t('profile.document_cin')}</option>
+            <option value="diploma">{t('profile.document_diploma')}</option>
           </select>
         </label>
         <label>
-          Fichier du document (PDF, JPG, PNG)
+          {t('profile.document_file')}
           <input type="file" accept=".pdf,image/*" onChange={(e) => setDocFile(e.target.files[0])} required />
         </label>
         <button className="primary-button" disabled={busy}>
-          {busy ? 'Envoi...' : 'Soumettre pour vérification'}
+          {busy ? t('profile.sending') : t('profile.submit_verification')}
         </button>
       </form>
     </div>
