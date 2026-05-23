@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { NavLink, Outlet } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext.jsx';
 import { useLocalization } from '../context/LocalizationContext.jsx';
@@ -10,7 +10,9 @@ export default function Layout() {
   const { locale, setLocale, t } = useLocalization();
   const [notifications, setNotifications] = useState([]);
   const [showNotifications, setShowNotifications] = useState(false);
-  const unreadCount = notifications.filter(n => !n.read_at).length;
+  const [showLanguageMenu, setShowLanguageMenu] = useState(false);
+  const languageMenuRef = useRef(null);
+  const unreadCount = notifications.filter((notification) => !notification.read_at).length;
 
   useEffect(() => {
     let cancelled = false;
@@ -51,12 +53,32 @@ export default function Layout() {
     };
   }, [user]);
 
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (languageMenuRef.current && !languageMenuRef.current.contains(event.target)) {
+        setShowLanguageMenu(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, []);
+
   const markNotificationRead = async (notificationId) => {
     try {
       await apiRequest(`/notifications/${notificationId}/read`, {
         method: 'PATCH',
       });
-      setNotifications(notifications.map(n => n.id === notificationId ? { ...n, read_at: new Date().toISOString() } : n));
+      setNotifications(
+        notifications.map((notification) => (
+          notification.id === notificationId
+            ? { ...notification, read_at: new Date().toISOString() }
+            : notification
+        )),
+      );
     } catch {
       // ignore
     }
@@ -77,47 +99,66 @@ export default function Layout() {
           <NavLink to="/">{t('common.home')}</NavLink>
           {user?.role !== 'admin' && <NavLink to="/search">{t('common.search')}</NavLink>}
           {user?.role === 'artisan' && <NavLink to="/annonces">{t('common.ads')}</NavLink>}
-          <NavLink to={user?.role === 'admin' ? '/admin' : '/dashboard'}>{t('common.dashboard')}</NavLink>
-          {user?.role !== 'admin' && (
+          {user && (
+            <NavLink to={user.role === 'admin' ? '/admin' : '/dashboard'}>{t('common.dashboard')}</NavLink>
+          )}
+          {user?.role !== 'admin' && user && (
             <NavLink to="/inbox" className="inbox-link">
               {t('common.inbox')}
             </NavLink>
           )}
-          <NavLink to="/profile">{t('common.profile')}</NavLink>
+          {user && <NavLink to="/profile">{t('common.profile')}</NavLink>}
         </nav>
 
         <div className="topbar-actions">
-          <div className="language-switcher" aria-label={t('layout.language')}>
-            <span className="language-switcher-label">{t('layout.language')}</span>
-            <div className="language-switcher-options">
-              <button
-                type="button"
-                className={`language-chip ${locale === 'fr' ? 'active' : ''}`}
-                onClick={() => setLocale('fr')}
-              >
-                <span className="language-flag" aria-hidden="true">🇫🇷</span>
-                <span>{t('layout.language.fr')}</span>
-              </button>
-              <button
-                type="button"
-                className={`language-chip ${locale === 'ar' ? 'active' : ''}`}
-                onClick={() => setLocale('ar')}
-              >
-                <span className="language-flag" aria-hidden="true">🇲🇦</span>
-                <span>{t('layout.language.ar')}</span>
-              </button>
-            </div>
+          <div className="language-switcher" ref={languageMenuRef}>
+            <button
+              type="button"
+              className="language-select"
+              aria-label={t('layout.language')}
+              aria-expanded={showLanguageMenu}
+              onClick={() => setShowLanguageMenu((open) => !open)}
+            >
+              <span className="language-flag" aria-hidden="true">{locale === 'ar' ? '🇲🇦' : '🇫🇷'}</span>
+            </button>
+
+            {showLanguageMenu && (
+              <div className="language-switcher-options" role="listbox" aria-label={t('layout.language')}>
+                <button
+                  type="button"
+                  className={`language-option ${locale === 'fr' ? 'active' : ''}`}
+                  onClick={() => {
+                    setLocale('fr');
+                    setShowLanguageMenu(false);
+                  }}
+                  aria-label={t('layout.language.fr')}
+                >
+                  <span className="language-flag" aria-hidden="true">🇫🇷</span>
+                </button>
+                <button
+                  type="button"
+                  className={`language-option ${locale === 'ar' ? 'active' : ''}`}
+                  onClick={() => {
+                    setLocale('ar');
+                    setShowLanguageMenu(false);
+                  }}
+                  aria-label={t('layout.language.ar')}
+                >
+                  <span className="language-flag" aria-hidden="true">🇲🇦</span>
+                </button>
+              </div>
+            )}
           </div>
 
           {user ? (
             <>
               <div className="notification-wrapper">
-                <button 
-                  className="icon-button" 
+                <button
+                  className="icon-button"
                   onClick={() => setShowNotifications(!showNotifications)}
                   aria-label={t('common.notifications')}
                 >
-                  <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/></svg>
+                  <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9" /><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0" /></svg>
                   {unreadCount > 0 ? <span className="notification-badge">{unreadCount}</span> : null}
                 </button>
 
@@ -178,4 +219,3 @@ export default function Layout() {
     </div>
   );
 }
-

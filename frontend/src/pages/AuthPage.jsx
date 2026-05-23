@@ -72,7 +72,6 @@ export default function AuthPage() {
       <aside className="auth-showcase panel">
         <p className="eyebrow">AloHirafi Access</p>
         <h2>{t('auth.title')}</h2>
-        <p className="muted-copy">{t('auth.subtitle')}</p>
         <div className="auth-pill-list">
           <div>
             <small>{t('common.role.client')}</small>

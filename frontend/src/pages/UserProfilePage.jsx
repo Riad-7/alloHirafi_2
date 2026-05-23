@@ -101,7 +101,6 @@ export default function UserProfilePage() {
           <article className="stat-card">
             <span>{t('public_profile.rate')}</span>
             <strong>{artisan.hourly_rate} DH</strong>
-            <small>{t('public_profile.per_hour')}</small>
           </article>
           <article className="stat-card">
             <span>{t('public_profile.experience')}</span>
