@@ -1,11 +1,21 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext.jsx';
 import { useLocalization } from '../context/LocalizationContext.jsx';
 import { useToast } from '../context/ToastContext.jsx';
 import { apiRequest } from '../services/api.js';
+import { getEcho } from '../services/realtime.js';
 import { formatDateTime } from '../utils/date.js';
 import { buildAvatarUrl, formatRole } from '../utils/userPresentation.js';
+
+function sortConversations(conversations) {
+  return [...conversations].sort((left, right) => {
+    const leftDate = left.last_message_at ?? left.updated_at ?? left.created_at ?? 0;
+    const rightDate = right.last_message_at ?? right.updated_at ?? right.created_at ?? 0;
+
+    return new Date(rightDate) - new Date(leftDate);
+  });
+}
 
 export default function InboxPage() {
   const { user } = useAuth();
@@ -17,11 +27,38 @@ export default function InboxPage() {
   const [body, setBody] = useState('');
   const [conversationQuery, setConversationQuery] = useState('');
   const [quoteState, setQuoteState] = useState({ title: '', description: '', amount: '' });
+  const [typingUser, setTypingUser] = useState(null);
+  const typingTimeoutRef = useRef(null);
+  const typingResetRef = useRef(null);
+
+  const fetchConversation = useCallback(async (conversationId) => {
+    const data = await apiRequest(`/conversations/${conversationId}`);
+    return data.conversation;
+  }, []);
+
+  const syncConversation = useCallback((incomingConversation) => {
+    setConversations((currentConversations) => {
+      const nextConversations = [...currentConversations];
+      const existingIndex = nextConversations.findIndex((conversation) => conversation.id === incomingConversation.id);
+
+      if (existingIndex >= 0) {
+        nextConversations[existingIndex] = incomingConversation;
+      } else {
+        nextConversations.unshift(incomingConversation);
+      }
+
+      return sortConversations(nextConversations);
+    });
+
+    setSelectedId((currentSelectedId) => currentSelectedId ?? incomingConversation.id);
+  }, []);
 
   const loadConversations = useCallback(async () => {
     const data = await apiRequest('/conversations');
-    setConversations(data.conversations);
-    setSelectedId((current) => current ?? data.conversations[0]?.id ?? null);
+    const nextConversations = sortConversations(data.conversations || []);
+
+    setConversations(nextConversations);
+    setSelectedId((currentSelectedId) => currentSelectedId ?? nextConversations[0]?.id ?? null);
   }, []);
 
   useEffect(() => {
@@ -32,12 +69,13 @@ export default function InboxPage() {
         const data = await apiRequest('/conversations');
 
         if (!cancelled) {
-          setConversations(data.conversations);
-          setSelectedId((current) => current ?? data.conversations[0]?.id ?? null);
+          const nextConversations = sortConversations(data.conversations || []);
+          setConversations(nextConversations);
+          setSelectedId((currentSelectedId) => currentSelectedId ?? nextConversations[0]?.id ?? null);
         }
-      } catch (err) {
+      } catch (error) {
         if (!cancelled) {
-          toast.error(err.message || t('inbox.load_error'));
+          toast.error(error.message || t('inbox.load_error'));
         }
       }
     };
@@ -49,10 +87,86 @@ export default function InboxPage() {
     };
   }, [t, toast]);
 
+  useEffect(() => {
+    if (!user) {
+      return undefined;
+    }
+
+    const echo = getEcho();
+
+    if (!echo) {
+      return undefined;
+    }
+
+    const channel = echo.private(`users.${user.id}.conversations`);
+    const handleConversationSynced = async (payload) => {
+      try {
+        const incomingConversation = await fetchConversation(payload.conversation_id);
+        syncConversation(incomingConversation);
+      } catch {
+        // Keep silent here; next interaction can recover state.
+      }
+    };
+
+    channel.listen('.conversation.synced', handleConversationSynced);
+
+    return () => {
+      channel.stopListening('.conversation.synced');
+      echo.leave(`private-users.${user.id}.conversations`);
+    };
+  }, [fetchConversation, syncConversation, user]);
+
   const selectedConversation = useMemo(
-    () => conversations.find((conversation) => conversation.id === selectedId),
+    () => conversations.find((conversation) => conversation.id === selectedId) ?? null,
     [conversations, selectedId],
   );
+
+  useEffect(() => {
+    if (!user || !selectedConversation) {
+      setTypingUser(null);
+      return undefined;
+    }
+
+    const echo = getEcho();
+
+    if (!echo) {
+      return undefined;
+    }
+
+    const channel = echo.private(`conversations.${selectedConversation.id}`);
+    const handleTypingWhisper = (payload) => {
+      if (!payload || payload.userId === user.id) {
+        return;
+      }
+
+      if (payload.isTyping) {
+        setTypingUser(payload.name);
+
+        if (typingResetRef.current) {
+          window.clearTimeout(typingResetRef.current);
+        }
+
+        typingResetRef.current = window.setTimeout(() => {
+          setTypingUser(null);
+        }, 1800);
+      } else {
+        setTypingUser(null);
+      }
+    };
+
+    channel.listenForWhisper('typing', handleTypingWhisper);
+
+    return () => {
+      if (typingResetRef.current) {
+        window.clearTimeout(typingResetRef.current);
+        typingResetRef.current = null;
+      }
+
+      setTypingUser(null);
+      channel.stopListeningForWhisper('typing');
+      echo.leave(`private-conversations.${selectedConversation.id}`);
+    };
+  }, [selectedConversation, user]);
 
   const filteredConversations = useMemo(() => {
     const query = conversationQuery.trim().toLowerCase();
@@ -73,25 +187,44 @@ export default function InboxPage() {
 
   const markConversationRead = useCallback(async (conversationId) => {
     try {
-      await apiRequest(`/conversations/${conversationId}/read`, { method: 'PATCH' });
-      await loadConversations();
+      const data = await apiRequest(`/conversations/${conversationId}/read`, { method: 'PATCH' });
+
+      if (data.conversation) {
+        syncConversation(data.conversation);
+      }
     } catch {
       // Silent fail to avoid blocking chat interactions.
     }
-  }, [loadConversations]);
+  }, [syncConversation]);
 
-  const handleSelectConversation = async (conversation) => {
-    setSelectedId(conversation.id);
-
-    if (conversation.unread_messages_count > 0) {
-      await markConversationRead(conversation.id);
+  useEffect(() => {
+    if (selectedConversation?.unread_messages_count > 0) {
+      void markConversationRead(selectedConversation.id);
     }
+  }, [markConversationRead, selectedConversation]);
+
+  const handleSelectConversation = (conversation) => {
+    setSelectedId(conversation.id);
   };
 
   const openUserProfile = (event, userId) => {
     event.stopPropagation();
     navigate(`/users/${userId}`);
   };
+
+  const sendTypingState = useCallback((isTyping) => {
+    if (!selectedConversation) {
+      return;
+    }
+
+    const echo = getEcho();
+
+    echo?.private(`conversations.${selectedConversation.id}`).whisper('typing', {
+      userId: user.id,
+      name: user.name,
+      isTyping,
+    });
+  }, [selectedConversation, user.id, user.name]);
 
   const sendMessage = async (event) => {
     event.preventDefault();
@@ -101,14 +234,27 @@ export default function InboxPage() {
     }
 
     try {
-      await apiRequest(`/conversations/${selectedId}/messages`, {
+      sendTypingState(false);
+
+      if (typingTimeoutRef.current) {
+        window.clearTimeout(typingTimeoutRef.current);
+        typingTimeoutRef.current = null;
+      }
+
+      const data = await apiRequest(`/conversations/${selectedId}/messages`, {
         method: 'POST',
         body: { body },
       });
+
       setBody('');
-      await loadConversations();
-    } catch (err) {
-      toast.error(err.message || t('inbox.send_error'));
+
+      if (data.conversation) {
+        syncConversation(data.conversation);
+      } else {
+        await loadConversations();
+      }
+    } catch (error) {
+      toast.error(error.message || t('inbox.send_error'));
     }
   };
 
@@ -132,9 +278,8 @@ export default function InboxPage() {
       });
       setQuoteState({ title: '', description: '', amount: '' });
       toast.success(t('inbox.quote_sent'));
-      await loadConversations();
-    } catch (err) {
-      toast.error(err.message || t('inbox.quote_send_error'));
+    } catch (error) {
+      toast.error(error.message || t('inbox.quote_send_error'));
     }
   };
 
@@ -150,9 +295,8 @@ export default function InboxPage() {
         body: { status: statusValue },
       });
       toast.success(t(statusValue === 'accepted' ? 'inbox.quote_accepted' : 'inbox.quote_rejected'));
-      await loadConversations();
-    } catch (err) {
-      toast.error(err.message || t('inbox.quote_update_error'));
+    } catch (error) {
+      toast.error(error.message || t('inbox.quote_update_error'));
     }
   };
 
@@ -188,7 +332,7 @@ export default function InboxPage() {
         <div className="conversation-list-body">
           {conversations.length === 0 ? (
             <div className="empty-state inbox-empty-state">
-              <svg xmlns="http://www.w3.org/2000/svg" width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path></svg>
+              <svg xmlns="http://www.w3.org/2000/svg" width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" /></svg>
               <p>{t('inbox.empty_conversations')}</p>
             </div>
           ) : null}
@@ -266,20 +410,36 @@ export default function InboxPage() {
 
           <div className="message-thread">
             {selectedConversation?.messages?.length ? (
-              selectedConversation.messages.map((message) => (
-                <article key={message.id} className={`message-bubble ${message.sender_id === user.id ? 'mine' : ''}`}>
-                  <Link to={`/users/${message.sender.id}`} className="avatar-link">
-                    <img src={buildAvatarUrl(message.sender)} alt={message.sender.name} className="avatar-xs" />
-                  </Link>
-                  <div className="message-content">
-                    <div className="message-author">
-                      <strong>{message.sender.name}</strong>
-                      <small>{formatDateTime(message.created_at, locale)}</small>
+              <>
+                {selectedConversation.messages.map((message) => (
+                  <article key={message.id} className={`message-bubble ${message.sender_id === user.id ? 'mine' : ''}`}>
+                    <Link to={`/users/${message.sender.id}`} className="avatar-link">
+                      <img src={buildAvatarUrl(message.sender)} alt={message.sender.name} className="avatar-xs" />
+                    </Link>
+                    <div className="message-content">
+                      <div className="message-author">
+                        <strong>{message.sender.name}</strong>
+                        <small>{formatDateTime(message.created_at, locale)}</small>
+                      </div>
+                      <p>{message.body}</p>
                     </div>
-                    <p>{message.body}</p>
-                  </div>
-                </article>
-              ))
+                  </article>
+                ))}
+                {typingUser ? (
+                  <article className="message-bubble typing-bubble">
+                    <div className="message-content">
+                      <div className="message-author">
+                        <strong>{typingUser}</strong>
+                      </div>
+                      <div className="typing-indicator" aria-label={`${typingUser} is typing`}>
+                        <span />
+                        <span />
+                        <span />
+                      </div>
+                    </div>
+                  </article>
+                ) : null}
+              </>
             ) : (
               <div className="empty-state inbox-empty-state thread-empty-state">
                 <p>{selectedConversation ? t('inbox.empty_messages') : t('inbox.choose_to_start')}</p>
@@ -288,7 +448,28 @@ export default function InboxPage() {
           </div>
 
           <form className="chat-composer" onSubmit={sendMessage}>
-            <input value={body} onChange={(e) => setBody(e.target.value)} placeholder={t('inbox.message_placeholder')} />
+            <input
+              value={body}
+              onChange={(event) => {
+                const nextValue = event.target.value;
+                setBody(nextValue);
+
+                if (!selectedConversation) {
+                  return;
+                }
+
+                sendTypingState(nextValue.trim().length > 0);
+
+                if (typingTimeoutRef.current) {
+                  window.clearTimeout(typingTimeoutRef.current);
+                }
+
+                typingTimeoutRef.current = window.setTimeout(() => {
+                  sendTypingState(false);
+                }, 1200);
+              }}
+              placeholder={t('inbox.message_placeholder')}
+            />
             <button className="primary-button" disabled={!selectedConversation || !body.trim()}>
               {t('common.send')}
             </button>
@@ -336,18 +517,18 @@ export default function InboxPage() {
                 </div>
                 <label>
                   {t('post.field_title')}
-                  <input value={quoteState.title} onChange={(e) => setQuoteState({ ...quoteState, title: e.target.value })} required />
+                  <input value={quoteState.title} onChange={(event) => setQuoteState({ ...quoteState, title: event.target.value })} required />
                 </label>
                 <label>
                   {t('inbox.amount_dh')}
-                  <input type="number" min="1" value={quoteState.amount} onChange={(e) => setQuoteState({ ...quoteState, amount: e.target.value })} required />
+                  <input type="number" min="1" value={quoteState.amount} onChange={(event) => setQuoteState({ ...quoteState, amount: event.target.value })} required />
                 </label>
                 <label>
                   {t('post.field_description')}
                   <textarea
                     rows="3"
                     value={quoteState.description}
-                    onChange={(e) => setQuoteState({ ...quoteState, description: e.target.value })}
+                    onChange={(event) => setQuoteState({ ...quoteState, description: event.target.value })}
                   />
                 </label>
                 <button className="primary-button">{t('inbox.send_quote_button')}</button>

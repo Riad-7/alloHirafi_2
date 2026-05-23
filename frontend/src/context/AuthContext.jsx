@@ -1,5 +1,6 @@
 import { createContext, useContext, useEffect, useState } from 'react';
 import { apiRequest, authRequest } from '../services/api.js';
+import { disconnectEcho } from '../services/realtime.js';
 
 const AuthContext = createContext(null);
 
@@ -26,6 +27,7 @@ export function AuthProvider({ children }) {
       } catch {
         if (!cancelled) {
           setUser(null);
+          disconnectEcho();
         }
       } finally {
         if (!cancelled) {
@@ -70,6 +72,7 @@ export function AuthProvider({ children }) {
       // Session cleanup still happens locally.
     }
 
+    disconnectEcho();
     setUser(null);
   };
 

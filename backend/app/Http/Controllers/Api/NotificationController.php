@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Models\AppNotification;
+use App\Support\NotificationPayload;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
@@ -26,8 +27,11 @@ class NotificationController extends Controller
 
         $notification->update(['read_at' => now()]);
 
+        $payload = NotificationPayload::from($notification->fresh());
+
         return response()->json([
-            'notification' => $notification->fresh(),
+            'notification' => $payload['notification'],
+            'unread_count' => $payload['unread_count'],
         ]);
     }
 }

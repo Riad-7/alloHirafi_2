@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Models\AppNotification;
 use App\Models\Quote;
+use App\Support\ConversationRealtime;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
@@ -38,6 +39,10 @@ class QuoteController extends Controller
             'payload' => ['quote_id' => $quote->id],
         ]);
 
+        if ($quote->conversation_id) {
+            ConversationRealtime::syncParticipants($quote->conversation);
+        }
+
         return response()->json([
             'quote' => $quote->load(['artisanUser', 'client', 'post']),
         ], 201);
@@ -62,10 +67,13 @@ class QuoteController extends Controller
             'payload' => ['quote_id' => $quote->id, 'status' => $data['status']],
         ]);
 
+        if ($quote->conversation_id) {
+            ConversationRealtime::syncParticipants($quote->conversation);
+        }
+
         return response()->json([
             'quote' => $quote->fresh()->load(['artisanUser', 'client', 'post']),
         ]);
     }
 }
-
 

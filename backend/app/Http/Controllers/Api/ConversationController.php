@@ -6,6 +6,8 @@ use App\Http\Controllers\Controller;
 use App\Models\AppNotification;
 use App\Models\Conversation;
 use App\Models\User;
+use App\Support\ConversationPayload;
+use App\Support\ConversationRealtime;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
@@ -15,21 +17,19 @@ class ConversationController extends Controller
     {
         $user = $request->user();
 
-        $conversations = Conversation::query()
-            ->with(['client', 'artisan', 'messages.sender', 'quotes'])
-            ->withCount([
-                'messages as unread_messages_count' => fn ($query) => $query
-                    ->whereNull('read_at')
-                    ->where('sender_id', '!=', $user->id),
-            ])
-            ->where(fn ($query) => $query
-                ->where('client_id', $user->id)
-                ->orWhere('artisan_id', $user->id))
-            ->orderByDesc('last_message_at')
-            ->orderByDesc('updated_at')
-            ->get();
+        return response()->json([
+            'conversations' => ConversationPayload::listForUser($user),
+        ]);
+    }
 
-        return response()->json(['conversations' => $conversations]);
+    public function show(Request $request, Conversation $conversation): JsonResponse
+    {
+        $user = $request->user();
+        $this->authorizeParticipant($conversation, $user->id);
+
+        return response()->json([
+            'conversation' => ConversationPayload::oneForUser($conversation, $user),
+        ]);
     }
 
     public function store(Request $request): JsonResponse
@@ -66,10 +66,12 @@ class ConversationController extends Controller
                 'body' => $client->name.' vous a contacte.',
                 'payload' => ['conversation_id' => $conversation->id],
             ]);
+
+            ConversationRealtime::syncParticipants($conversation);
         }
 
         return response()->json([
-            'conversation' => $conversation->load(['client', 'artisan', 'messages.sender', 'quotes']),
+            'conversation' => ConversationPayload::oneForUser($conversation, $client),
         ], 201);
     }
 
@@ -98,8 +100,11 @@ class ConversationController extends Controller
             'payload' => ['conversation_id' => $conversation->id],
         ]);
 
+        ConversationRealtime::syncParticipants($conversation);
+
         return response()->json([
             'message' => $message->load('sender'),
+            'conversation' => ConversationPayload::oneForUser($conversation, $user),
         ], 201);
     }
 
@@ -113,9 +118,12 @@ class ConversationController extends Controller
             ->whereNull('read_at')
             ->update(['read_at' => now()]);
 
+        ConversationRealtime::syncParticipants($conversation);
+
         return response()->json([
             'conversation_id' => $conversation->id,
             'messages_marked_read' => $updated,
+            'conversation' => ConversationPayload::oneForUser($conversation, $user),
         ]);
     }
 

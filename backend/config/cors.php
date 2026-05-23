@@ -21,6 +21,7 @@ return [
         'login',
         'logout',
         'register',
+        'broadcasting/auth',
         'forgot-password',
         'reset-password',
         'email/verification-notification',
