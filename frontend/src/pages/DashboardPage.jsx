@@ -5,13 +5,11 @@ import { useAuth } from '../context/AuthContext.jsx';
 import { useLocalization } from '../context/LocalizationContext.jsx';
 import { useToast } from '../context/ToastContext.jsx';
 import { apiRequest } from '../services/api.js';
-import { formatDateTime } from '../utils/date.js';
-import { formatRatingValue, starsVisual } from '../utils/rating.js';
 import { buildAvatarUrl, formatRole } from '../utils/userPresentation.js';
 
 export default function DashboardPage() {
   const { user } = useAuth();
-  const { locale, t } = useLocalization();
+  const { t } = useLocalization();
   const toast = useToast();
   const [dashboard, setDashboard] = useState(null);
   const [artisans, setArtisans] = useState([]);
@@ -61,14 +59,6 @@ export default function DashboardPage() {
   }, [t, toast]);
 
   const selectedArtisan = artisans.find((artisan) => artisan.id === reviewDraft.artisanId) ?? null;
-  const reviewFeed = (selectedArtisan
-    ? (selectedArtisan.reviews ?? []).map((review) => ({ ...review, artisan: selectedArtisan }))
-    : artisans.flatMap((artisan) =>
-      (artisan.reviews ?? []).map((review) => ({ ...review, artisan }))
-    ))
-    .sort((first, second) => new Date(second.created_at).getTime() - new Date(first.created_at).getTime())
-    .slice(0, 12);
-
   const openReviewComposer = (artisan) => {
     setReviewDraft({
       artisanId: artisan.id,
@@ -219,126 +209,86 @@ export default function DashboardPage() {
         )}
       </div>
 
-      <div className="content-grid">
-        {user?.role === 'client' ? (
-          <>
-            <div className="stack-layout">
-              <div className="panel">
-                <div className="panel-heading">
-                  <h3>{t('dashboard.client_reviews_title')}</h3>
-                  <p>{t('dashboard.client_reviews_body')}</p>
-                </div>
-
-                {selectedArtisan ? (
-                  <div className="review-composer">
-                    <div className="review-composer-header">
-                      <div className="review-selected-artisan">
-                        <img src={buildAvatarUrl(selectedArtisan.user)} alt={selectedArtisan.user.name} className="avatar-sm" />
-                        <div>
-                          <strong>Ton avis pour {selectedArtisan.user.name}</strong>
-                          <small className="muted-copy">Choisis une note et ecris un commentaire clair.</small>
-                        </div>
-                      </div>
-                      <button className="ghost-button" onClick={closeReviewComposer}>
-                        {t('common.cancel')}
-                      </button>
-                    </div>
-
-                    <div>
-                      <label className="review-label">Note</label>
-                      <div className="review-stars" role="radiogroup" aria-label="Choisir une note">
-                        {[1, 2, 3, 4, 5].map((value) => (
-                          <button
-                            key={value}
-                            type="button"
-                            className={`review-star-btn ${value <= reviewDraft.rating ? 'active' : ''}`}
-                            onClick={() => setReviewDraft((current) => ({ ...current, rating: value }))}
-                            aria-checked={value === reviewDraft.rating}
-                            role="radio"
-                            title={`${value}/5`}
-                          >
-                            {'\u2605'}
-                          </button>
-                        ))}
-                      </div>
-                    </div>
-
-                    <div>
-                      <label htmlFor="review-comment" className="review-label">Commentaire</label>
-                      <textarea
-                        id="review-comment"
-                        rows={4}
-                        placeholder="Ex: Service rapide, propre et tres professionnel."
-                        value={reviewDraft.comment}
-                        onChange={(event) => setReviewDraft((current) => ({ ...current, comment: event.target.value }))}
-                      />
-                    </div>
-
-                    <div className="review-composer-actions">
-                      <button className="ghost-button" onClick={closeReviewComposer} disabled={reviewDraft.submitting}>
-                        {t('common.cancel')}
-                      </button>
-                      <button className="primary-button" onClick={submitReview} disabled={reviewDraft.submitting}>
-                        {reviewDraft.submitting ? 'Envoi...' : 'Envoyer l avis'}
-                      </button>
-                    </div>
-                  </div>
-                ) : null}
-
-                {artisans.length > 0 ? (
-                  <div className="card-grid">
-                    {artisans.map((artisan) => (
-                      <ArtisanCard key={artisan.id} artisan={artisan} onReview={openReviewComposer} />
-                    ))}
-                  </div>
-                ) : (
-                  <div className="empty-state">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" style={{ opacity: 0.5, marginBottom: '1rem' }}><circle cx="12" cy="12" r="10"></circle><path d="M16 16s-1.5-2-4-2-4 2-4 2"></path><line x1="9" y1="9" x2="9.01" y2="9"></line><line x1="15" y1="9" x2="15.01" y2="9"></line></svg>
-                    <h4>{t('dashboard.no_artisans_title')}</h4>
-                    <p>{t('dashboard.no_artisans_body')}</p>
-                  </div>
-                )}
-              </div>
+      {user?.role === 'client' ? (
+        <div className="dashboard-client-main">
+          <div className="panel">
+            <div className="panel-heading">
+              <h3>{t('dashboard.client_reviews_title')}</h3>
+              <p>{t('dashboard.client_reviews_body')}</p>
             </div>
 
-            <aside className="panel review-feed-panel">
-              <div className="panel-heading">
-                <h3>{selectedArtisan ? `Avis sur ${selectedArtisan.user.name}` : 'Derniers avis clients'}</h3>
-                <p>{selectedArtisan ? 'Commentaires recents pour cet artisan.' : 'Tous les commentaires laisses par les clients.'}</p>
-              </div>
-
-              {reviewFeed.length > 0 ? (
-                <div className="review-feed-list">
-                  {reviewFeed.map((review) => (
-                    <article key={review.id} className="review-feed-item">
-                      <div className="review-feed-head">
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
-                          <img src={buildAvatarUrl(review.client)} alt={review.client?.name || 'Client'} className="avatar-xs" />
-                          <div>
-                            <strong>{review.client?.name || 'Client'}</strong>
-                            {!selectedArtisan ? (
-                              <small className="muted-copy">pour {review.artisan?.user?.name}</small>
-                            ) : null}
-                          </div>
-                        </div>
-                        <small className="muted-copy">{formatDateTime(review.created_at, locale)}</small>
-                      </div>
-                      <p className="review-feed-stars">
-                        {starsVisual(review.rating)} ({formatRatingValue(review.rating)}/5)
-                      </p>
-                      <p className="review-feed-comment">
-                        {review.comment?.trim() ? review.comment : 'Aucun commentaire.'}
-                      </p>
-                    </article>
-                  ))}
+            {selectedArtisan ? (
+              <div className="review-composer">
+                <div className="review-composer-header">
+                  <div className="review-selected-artisan">
+                    <img src={buildAvatarUrl(selectedArtisan.user)} alt={selectedArtisan.user.name} className="avatar-sm" />
+                    <div>
+                      <strong>Ton avis pour {selectedArtisan.user.name}</strong>
+                      <small className="muted-copy">Choisis une note et ecris un commentaire clair.</small>
+                    </div>
+                  </div>
+                  <button className="ghost-button" onClick={closeReviewComposer}>
+                    {t('common.cancel')}
+                  </button>
                 </div>
-              ) : (
-                <p className="muted-copy">Aucun avis pour le moment.</p>
-              )}
-            </aside>
-          </>
-        ) : null}
-      </div>
+
+                <div>
+                  <label className="review-label">Note</label>
+                  <div className="review-stars" role="radiogroup" aria-label="Choisir une note">
+                    {[1, 2, 3, 4, 5].map((value) => (
+                      <button
+                        key={value}
+                        type="button"
+                        className={`review-star-btn ${value <= reviewDraft.rating ? 'active' : ''}`}
+                        onClick={() => setReviewDraft((current) => ({ ...current, rating: value }))}
+                        aria-checked={value === reviewDraft.rating}
+                        role="radio"
+                        title={`${value}/5`}
+                      >
+                        {'\u2605'}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                <div>
+                  <label htmlFor="review-comment" className="review-label">Commentaire</label>
+                  <textarea
+                    id="review-comment"
+                    rows={4}
+                    placeholder="Ex: Service rapide, propre et tres professionnel."
+                    value={reviewDraft.comment}
+                    onChange={(event) => setReviewDraft((current) => ({ ...current, comment: event.target.value }))}
+                  />
+                </div>
+
+                <div className="review-composer-actions">
+                  <button className="ghost-button" onClick={closeReviewComposer} disabled={reviewDraft.submitting}>
+                    {t('common.cancel')}
+                  </button>
+                  <button className="primary-button" onClick={submitReview} disabled={reviewDraft.submitting}>
+                    {reviewDraft.submitting ? 'Envoi...' : 'Envoyer l avis'}
+                  </button>
+                </div>
+              </div>
+            ) : null}
+
+            {artisans.length > 0 ? (
+              <div className="card-grid">
+                {artisans.map((artisan) => (
+                  <ArtisanCard key={artisan.id} artisan={artisan} onReview={openReviewComposer} />
+                ))}
+              </div>
+            ) : (
+              <div className="empty-state">
+                <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" style={{ opacity: 0.5, marginBottom: '1rem' }}><circle cx="12" cy="12" r="10"></circle><path d="M16 16s-1.5-2-4-2-4 2-4 2"></path><line x1="9" y1="9" x2="9.01" y2="9"></line><line x1="15" y1="9" x2="15.01" y2="9"></line></svg>
+                <h4>{t('dashboard.no_artisans_title')}</h4>
+                <p>{t('dashboard.no_artisans_body')}</p>
+              </div>
+            )}
+          </div>
+        </div>
+      ) : null}
     </section>
   );
 }
