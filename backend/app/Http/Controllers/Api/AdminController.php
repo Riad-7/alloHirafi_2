@@ -4,10 +4,13 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Models\Artisan;
+use App\Models\ErrorLog;
+use App\Models\RequestLog;
 use App\Models\User;
 use App\Models\VerificationRequest;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Storage;
 use Symfony\Component\HttpFoundation\StreamedResponse;
 
@@ -18,12 +21,60 @@ class AdminController extends Controller
      */
     public function stats(): JsonResponse
     {
+        $requestsToday = RequestLog::query()->whereDate('created_at', today())->count();
+        $errorsToday = ErrorLog::query()->whereDate('created_at', today())->count();
+
         return response()->json([
             'total_users' => User::count(),
             'total_clients' => User::where('role', 'client')->count(),
             'total_artisans' => Artisan::count(),
             'pending_verifications' => VerificationRequest::where('status', 'pending')->count(),
+            'requests_today' => $requestsToday,
+            'errors_today' => $errorsToday,
+            'error_rate_today' => $requestsToday > 0
+                ? round(($errorsToday / $requestsToday) * 100, 2)
+                : 0.0,
+            'errors_per_day' => $this->buildErrorSeries(),
+            'recent_errors' => ErrorLog::query()
+                ->latest()
+                ->limit(7)
+                ->get([
+                    'id',
+                    'created_at',
+                    'method',
+                    'path',
+                    'status_code',
+                    'exception_class',
+                    'message',
+                ]),
         ]);
+    }
+
+    private function buildErrorSeries(int $days = 7): array
+    {
+        $start = now()->startOfDay()->subDays($days - 1);
+        $end = now()->startOfDay();
+
+        $counts = ErrorLog::query()
+            ->selectRaw('DATE(created_at) as day, COUNT(*) as total')
+            ->whereBetween('created_at', [$start, now()])
+            ->groupBy('day')
+            ->pluck('total', 'day');
+
+        $series = [];
+        $cursor = $start->copy();
+
+        while ($cursor->lte($end)) {
+            $key = $cursor->toDateString();
+            $series[] = [
+                'date' => $key,
+                'count' => (int) ($counts[$key] ?? 0),
+                'label' => Carbon::parse($key)->format('d/m'),
+            ];
+            $cursor->addDay();
+        }
+
+        return $series;
     }
 
     public function users(Request $request): JsonResponse
