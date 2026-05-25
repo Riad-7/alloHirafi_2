@@ -6,6 +6,7 @@ import { useToast } from '../context/ToastContext.jsx';
 import { apiRequest } from '../services/api.js';
 import { formatDateTime } from '../utils/date.js';
 import { buildAvatarUrl, buildMediaUrl, formatRole } from '../utils/userPresentation.js';
+import { buildRatingSummary, formatRatingValue } from '../utils/rating.js';
 
 export default function UserProfilePage() {
   const { id } = useParams();
@@ -75,6 +76,7 @@ export default function UserProfilePage() {
 
   const artisan = profile.artisan_profile;
   const posts = profile.posts ?? [];
+  const ratingSummary = artisan ? buildRatingSummary(artisan, profile.name) : null;
 
   return (
     <section className="stack-layout public-profile-page">
@@ -105,6 +107,14 @@ export default function UserProfilePage() {
           <article className="stat-card">
             <span>{t('public_profile.experience')}</span>
             <strong>{artisan.years_experience} {t('artisan.years')}</strong>
+          </article>
+          <article className="stat-card">
+            <span>{t('dashboard.stats.average_rating')}</span>
+            <strong>
+              {ratingSummary?.reviews_count > 0
+                ? `${ratingSummary.stars_visual} (${formatRatingValue(ratingSummary.average_rating)}/5)`
+                : ratingSummary?.no_reviews_message}
+            </strong>
           </article>
         </div>
       ) : null}
