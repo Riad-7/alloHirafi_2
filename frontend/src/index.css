@@ -1288,6 +1288,126 @@ textarea {
   gap: 1rem;
 }
 
+.review-composer {
+  display: grid;
+  gap: 1rem;
+  margin-bottom: 1.2rem;
+  padding: 1rem;
+  border-radius: 16px;
+  border: 1px solid rgba(31, 111, 235, 0.2);
+  background: linear-gradient(145deg, rgba(31, 111, 235, 0.08), rgba(255, 255, 255, 0.9));
+}
+
+.review-composer-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.8rem;
+}
+
+.review-selected-artisan {
+  display: flex;
+  align-items: center;
+  gap: 0.7rem;
+}
+
+.review-selected-artisan strong {
+  display: block;
+}
+
+.review-label {
+  display: block;
+  margin-bottom: 0.45rem;
+  font-weight: 700;
+  color: #24456f;
+}
+
+.review-stars {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.45rem;
+}
+
+.review-star-btn {
+  width: 2.2rem;
+  height: 2.2rem;
+  border-radius: 10px;
+  border: 1px solid rgba(13, 27, 42, 0.12);
+  color: #8ea0b6;
+  background: #ffffff;
+  font-size: 1.15rem;
+  line-height: 1;
+  transition: transform 120ms ease, box-shadow 120ms ease, color 120ms ease, border-color 120ms ease;
+}
+
+.review-star-btn:hover {
+  transform: translateY(-1px);
+  color: #f59e0b;
+  border-color: rgba(245, 158, 11, 0.45);
+}
+
+.review-star-btn.active {
+  color: #f59e0b;
+  border-color: rgba(245, 158, 11, 0.55);
+  box-shadow: 0 8px 16px rgba(245, 158, 11, 0.16);
+}
+
+.review-composer-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.6rem;
+}
+
+.review-feed-panel {
+  display: grid;
+  align-content: start;
+  gap: 0.9rem;
+  max-height: 860px;
+  overflow: auto;
+}
+
+.review-feed-list {
+  display: grid;
+  gap: 0.75rem;
+}
+
+.review-feed-item {
+  border: 1px solid rgba(13, 27, 42, 0.1);
+  border-radius: 14px;
+  padding: 0.85rem;
+  background: rgba(255, 255, 255, 0.9);
+}
+
+.review-feed-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 0.65rem;
+}
+
+.review-feed-head strong {
+  display: block;
+  font-size: 0.88rem;
+}
+
+.review-feed-head small {
+  display: block;
+  font-size: 0.72rem;
+}
+
+.review-feed-stars {
+  margin: 0.45rem 0;
+  font-weight: 700;
+  color: #9a6200;
+}
+
+.review-feed-comment {
+  margin: 0;
+  color: #2d4159;
+  line-height: 1.45;
+  white-space: pre-wrap;
+}
+
 .public-profile-back {
   justify-self: start;
 }
@@ -1462,7 +1582,9 @@ textarea {
 
   .profile-posts-hero,
   .profile-post-footer,
-  .public-profile-hero {
+  .public-profile-hero,
+  .review-composer-header,
+  .review-composer-actions {
     align-items: flex-start;
     flex-direction: column;
   }
