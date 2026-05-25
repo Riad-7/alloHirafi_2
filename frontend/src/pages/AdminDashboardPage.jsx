@@ -9,7 +9,17 @@ import { buildAvatarUrl, formatRole } from '../utils/userPresentation.js';
 export default function AdminDashboardPage() {
   const { locale, t } = useLocalization();
   const toast = useToast();
-  const [stats, setStats] = useState({ total_users: 0, total_clients: 0, total_artisans: 0, pending_verifications: 0 });
+  const [stats, setStats] = useState({
+    total_users: 0,
+    total_clients: 0,
+    total_artisans: 0,
+    pending_verifications: 0,
+    requests_today: 0,
+    errors_today: 0,
+    error_rate_today: 0,
+    errors_per_day: [],
+    recent_errors: [],
+  });
   const [pendingRequests, setPendingRequests] = useState([]);
   const [users, setUsers] = useState([]);
   const [userRoleFilter, setUserRoleFilter] = useState('client');
@@ -87,6 +97,11 @@ export default function AdminDashboardPage() {
     window.open(`${API_URL}/admin/verifications/${id}/document`, '_blank');
   };
 
+  const errorSeries = stats.errors_per_day ?? [];
+  const maxErrorCount = Math.max(...errorSeries.map((item) => item.count), 1);
+  const recentErrors = stats.recent_errors ?? [];
+  const formatExceptionName = (name) => name?.split('\\').pop() ?? '-';
+
   if (loading) return <div className="shell-loader">{t('admin.loading')}</div>;
 
   return (
@@ -112,7 +127,72 @@ export default function AdminDashboardPage() {
           color="accent"
           icon={<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg>}
         />
+        <StatCard label={t('admin.stats.requests_today')} value={stats.requests_today} />
+        <StatCard
+          label={t('admin.stats.errors_today')}
+          value={stats.errors_today}
+          color="danger"
+        />
       </div>
+
+      <section className="panel requests-panel">
+        <div className="panel-heading">
+          <div>
+            <h3>{t('admin.observability_title')}</h3>
+            <p>{t('admin.observability_body')}</p>
+          </div>
+          <div className="observability-pill">
+            <strong>{stats.error_rate_today}%</strong>
+            <span>{t('admin.error_rate_today')}</span>
+          </div>
+        </div>
+
+        <div className="error-series">
+          {errorSeries.map((item) => (
+            <article key={item.date} className="error-series-item">
+              <div className="error-series-header">
+                <small>{item.label}</small>
+                <strong>{item.count}</strong>
+              </div>
+              <div className="error-series-track">
+                <div
+                  className="error-series-bar"
+                  style={{ width: `${Math.max((item.count / maxErrorCount) * 100, item.count > 0 ? 8 : 0)}%` }}
+                />
+              </div>
+            </article>
+          ))}
+        </div>
+
+        <div className="admin-table-wrapper">
+          <table className="admin-table">
+            <thead>
+              <tr>
+                <th>{t('admin.error_date')}</th>
+                <th>{t('admin.error_type')}</th>
+                <th>{t('admin.error_endpoint')}</th>
+                <th>{t('admin.error_message')}</th>
+              </tr>
+            </thead>
+            <tbody>
+              {recentErrors.length === 0 ? (
+                <tr>
+                  <td colSpan="4">{t('admin.no_errors')}</td>
+                </tr>
+              ) : (
+                recentErrors.map((item) => (
+                  <tr key={item.id}>
+                    <td>{new Date(item.created_at).toLocaleString(locale === 'ar' ? 'ar-MA' : 'fr-MA')}</td>
+                    <td>{formatExceptionName(item.exception_class)}</td>
+                    <td>{`${item.method ?? '-'} ${item.path ?? '-'}`}</td>
+                    <td>{item.message || '-'}</td>
+                  </tr>
+                ))
+              )}
+            </tbody>
+          </table>
+        </div>
+      </section>
 
       <section className="panel requests-panel">
         <div className="panel-heading">
