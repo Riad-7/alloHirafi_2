@@ -6,10 +6,13 @@ import { useAuth } from '../context/AuthContext.jsx';
 import { useLocalization } from '../context/LocalizationContext.jsx';
 import { useToast } from '../context/ToastContext.jsx';
 import { apiRequest } from '../services/api.js';
+import { formatDateTime } from '../utils/date.js';
+import { formatRatingValue, starsVisual } from '../utils/rating.js';
+import { buildAvatarUrl } from '../utils/userPresentation.js';
 
 export default function SearchPage() {
   const { user } = useAuth();
-  const { t } = useLocalization();
+  const { locale, t } = useLocalization();
   const toast = useToast();
   const navigate = useNavigate();
   const [filters, setFilters] = useState({ metier: '', ville: '', note: '' });
@@ -18,6 +21,12 @@ export default function SearchPage() {
   const [posts, setPosts] = useState([]);
   const [aiFilters, setAiFilters] = useState(null);
   const [activeTab, setActiveTab] = useState('artisans');
+  const [reviewDraft, setReviewDraft] = useState({
+    artisanId: null,
+    rating: 0,
+    comment: '',
+    submitting: false,
+  });
 
   useEffect(() => {
     let cancelled = false;
@@ -93,6 +102,67 @@ export default function SearchPage() {
       navigate('/inbox');
     } catch (err) {
       toast.error(err.message || t('search.contact_error'));
+    }
+  };
+
+  const selectedArtisan = artisans.find((artisan) => artisan.id === reviewDraft.artisanId) ?? null;
+  const reviewFeed = (selectedArtisan
+    ? (selectedArtisan.reviews ?? []).map((review) => ({ ...review, artisan: selectedArtisan }))
+    : artisans.flatMap((artisan) =>
+      (artisan.reviews ?? []).map((review) => ({ ...review, artisan }))
+    ))
+    .sort((first, second) => new Date(second.created_at).getTime() - new Date(first.created_at).getTime())
+    .slice(0, 10);
+
+  const openReviewComposer = (artisan) => {
+    setReviewDraft({
+      artisanId: artisan.id,
+      rating: 5,
+      comment: '',
+      submitting: false,
+    });
+  };
+
+  const closeReviewComposer = () => {
+    setReviewDraft({
+      artisanId: null,
+      rating: 0,
+      comment: '',
+      submitting: false,
+    });
+  };
+
+  const refreshVisibleArtisans = async () => {
+    const data = await apiRequest('/artisans');
+    const artisanMap = new Map((data.artisans ?? []).map((artisan) => [artisan.id, artisan]));
+    setArtisans((current) => current.map((artisan) => artisanMap.get(artisan.id) ?? artisan));
+  };
+
+  const submitReview = async () => {
+    if (!selectedArtisan) return;
+
+    if (reviewDraft.rating < 1 || reviewDraft.rating > 5) {
+      toast.error('Choisis une note entre 1 et 5 etoiles.');
+      return;
+    }
+
+    setReviewDraft((current) => ({ ...current, submitting: true }));
+
+    try {
+      await apiRequest(`/artisans/${selectedArtisan.id}/reviews`, {
+        method: 'POST',
+        body: {
+          rating: reviewDraft.rating,
+          comment: reviewDraft.comment || null,
+        },
+      });
+
+      toast.success(t('dashboard.review_success', { name: selectedArtisan.user.name }));
+      closeReviewComposer();
+      await refreshVisibleArtisans();
+    } catch (err) {
+      toast.error(err.message || t('dashboard.review_error'));
+      setReviewDraft((current) => ({ ...current, submitting: false }));
     }
   };
 
@@ -184,19 +254,120 @@ export default function SearchPage() {
       <div style={{ marginTop: '2rem' }}>
         {activeTab === 'artisans' && (
           <>
-            {artisans.length === 0 ? (
-              <div className="empty-state">
-                <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" style={{ opacity: 0.5, marginBottom: '1rem' }}><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
-                <h4>{t('search.no_artisans_title')}</h4>
-                <p>{t('search.no_artisans_body')}</p>
+            <div className="content-grid">
+              <div className="stack-layout">
+                {selectedArtisan ? (
+                  <div className="review-composer">
+                    <div className="review-composer-header">
+                      <div className="review-selected-artisan">
+                        <img src={buildAvatarUrl(selectedArtisan.user)} alt={selectedArtisan.user.name} className="avatar-sm" />
+                        <div>
+                          <strong>Ton avis pour {selectedArtisan.user.name}</strong>
+                          <small className="muted-copy">Choisis une note et ecris un commentaire clair.</small>
+                        </div>
+                      </div>
+                      <button className="ghost-button" onClick={closeReviewComposer}>
+                        {t('common.cancel')}
+                      </button>
+                    </div>
+
+                    <div>
+                      <label className="review-label">Note</label>
+                      <div className="review-stars" role="radiogroup" aria-label="Choisir une note">
+                        {[1, 2, 3, 4, 5].map((value) => (
+                          <button
+                            key={value}
+                            type="button"
+                            className={`review-star-btn ${value <= reviewDraft.rating ? 'active' : ''}`}
+                            onClick={() => setReviewDraft((current) => ({ ...current, rating: value }))}
+                            aria-checked={value === reviewDraft.rating}
+                            role="radio"
+                            title={`${value}/5`}
+                          >
+                            {'\u2605'}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+
+                    <div>
+                      <label htmlFor="search-review-comment" className="review-label">Commentaire</label>
+                      <textarea
+                        id="search-review-comment"
+                        rows={4}
+                        placeholder="Ex: Service rapide, propre et tres professionnel."
+                        value={reviewDraft.comment}
+                        onChange={(event) => setReviewDraft((current) => ({ ...current, comment: event.target.value }))}
+                      />
+                    </div>
+
+                    <div className="review-composer-actions">
+                      <button className="ghost-button" onClick={closeReviewComposer} disabled={reviewDraft.submitting}>
+                        {t('common.cancel')}
+                      </button>
+                      <button className="primary-button" onClick={submitReview} disabled={reviewDraft.submitting}>
+                        {reviewDraft.submitting ? 'Envoi...' : 'Envoyer l avis'}
+                      </button>
+                    </div>
+                  </div>
+                ) : null}
+
+                {artisans.length === 0 ? (
+                  <div className="empty-state">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" style={{ opacity: 0.5, marginBottom: '1rem' }}><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+                    <h4>{t('search.no_artisans_title')}</h4>
+                    <p>{t('search.no_artisans_body')}</p>
+                  </div>
+                ) : (
+                  <div className="card-grid">
+                    {artisans.map((artisan) => (
+                      <ArtisanCard
+                        key={artisan.id}
+                        artisan={artisan}
+                        onContact={contactArtisan}
+                        onReview={user?.role === 'client' ? openReviewComposer : undefined}
+                      />
+                    ))}
+                  </div>
+                )}
               </div>
-            ) : (
-              <div className="card-grid">
-                {artisans.map((artisan) => (
-                  <ArtisanCard key={artisan.id} artisan={artisan} onContact={contactArtisan} />
-                ))}
-              </div>
-            )}
+
+              <aside className="panel review-feed-panel search-review-feed-panel">
+                <div className="panel-heading">
+                  <h3>{selectedArtisan ? `Avis sur ${selectedArtisan.user.name}` : 'Derniers avis clients'}</h3>
+                  <p>{selectedArtisan ? 'Commentaires recents pour cet artisan.' : 'Tous les commentaires laisses par les clients.'}</p>
+                </div>
+
+                {reviewFeed.length > 0 ? (
+                  <div className="review-feed-list search-review-feed-list">
+                    {reviewFeed.map((review) => (
+                      <article key={review.id} className="review-feed-item">
+                        <div className="review-feed-head">
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
+                            <img src={buildAvatarUrl(review.client)} alt={review.client?.name || 'Client'} className="avatar-xs" />
+                            <div>
+                              <strong>{review.client?.name || 'Client'}</strong>
+                              {!selectedArtisan ? (
+                                <small className="muted-copy">pour {review.artisan?.user?.name}</small>
+                              ) : null}
+                            </div>
+                          </div>
+                          <small className="muted-copy">{formatDateTime(review.created_at, locale)}</small>
+                        </div>
+                        <p className="review-feed-stars">
+                          {starsVisual(review.rating)} ({formatRatingValue(review.rating)}/5)
+                        </p>
+                        <p className="review-feed-comment">
+                          {review.comment?.trim() ? review.comment : 'Aucun commentaire.'}
+                        </p>
+                      </article>
+                    ))}
+                  </div>
+                ) : (
+                  <p className="muted-copy">Aucun avis pour le moment.</p>
+                )}
+              </aside>
+            </div>
           </>
         )}
 
