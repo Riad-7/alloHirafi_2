@@ -2,12 +2,17 @@
 
 namespace App\Models;
 
+use App\Support\ArtisanRatingSummary;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Artisan extends Model
 {
+    protected $appends = [
+        'rating_summary',
+    ];
+
     protected $fillable = [
         'user_id',
         'craft',
@@ -42,5 +47,10 @@ class Artisan extends Model
     public function reviews(): HasMany
     {
         return $this->hasMany(Review::class);
+    }
+
+    public function getRatingSummaryAttribute(): array
+    {
+        return ArtisanRatingSummary::build($this);
     }
 }
