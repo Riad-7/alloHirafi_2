@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { Link } from 'react-router-dom';
 import ArtisanCard from '../components/ArtisanCard.jsx';
 import StatCard from '../components/StatCard.jsx';
 import { useAuth } from '../context/AuthContext.jsx';
@@ -21,10 +22,10 @@ export default function DashboardPage() {
   });
 
   const load = async () => {
-    const [dashboardData, artisansData] = await Promise.all([
-      apiRequest('/dashboard'),
-      apiRequest('/artisans'),
-    ]);
+    const dashboardData = await apiRequest('/dashboard');
+    const artisansData = dashboardData.user.role === 'client'
+      ? await apiRequest('/artisans?disponible=1')
+      : { artisans: [] };
 
     setDashboard(dashboardData);
     setArtisans(artisansData.artisans);
@@ -35,10 +36,10 @@ export default function DashboardPage() {
 
     const bootstrap = async () => {
       try {
-        const [dashboardData, artisansData] = await Promise.all([
-          apiRequest('/dashboard'),
-          apiRequest('/artisans'),
-        ]);
+        const dashboardData = await apiRequest('/dashboard');
+        const artisansData = dashboardData.user.role === 'client'
+          ? await apiRequest('/artisans?disponible=1')
+          : { artisans: [] };
 
         if (!cancelled) {
           setDashboard(dashboardData);
@@ -141,9 +142,9 @@ export default function DashboardPage() {
               icon={<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path></svg>}
             />
             <StatCard
-              label={t('dashboard.stats.my_quotes')}
+              label={t('dashboard.stats.received_quotes')}
               value={dashboard.stats.quotes}
-              helper={t('dashboard.stats.business_followup')}
+              helper={t('dashboard.stats.quotes_received_followup')}
               icon={<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg>}
             />
           </>
@@ -164,7 +165,7 @@ export default function DashboardPage() {
               icon={<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path></svg>}
             />
             <StatCard
-              label={t('dashboard.stats.my_quotes')}
+              label={t('dashboard.stats.sent_quotes')}
               value={dashboard.stats.quotes}
               helper={t('dashboard.stats.sent_offers')}
               icon={<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg>}
@@ -286,6 +287,30 @@ export default function DashboardPage() {
                 <p>{t('dashboard.no_artisans_body')}</p>
               </div>
             )}
+          </div>
+        </div>
+      ) : null}
+
+      {user?.role === 'artisan' ? (
+        <div className="panel dashboard-artisan-actions">
+          <div className="panel-heading">
+            <h3>{t('dashboard.artisan_actions_title')}</h3>
+            <p>{t('dashboard.artisan_actions_body')}</p>
+          </div>
+
+          <div className="dashboard-action-grid">
+            <Link to="/annonces" className="dashboard-action-card">
+              <strong>{t('dashboard.actions.manage_posts')}</strong>
+              <span>{t('dashboard.actions.manage_posts_body')}</span>
+            </Link>
+            <Link to="/inbox" className="dashboard-action-card">
+              <strong>{t('dashboard.actions.open_conversations')}</strong>
+              <span>{t('dashboard.actions.open_conversations_body')}</span>
+            </Link>
+            <Link to="/profile" className="dashboard-action-card">
+              <strong>{t('dashboard.actions.update_profile')}</strong>
+              <span>{t('dashboard.actions.update_profile_body')}</span>
+            </Link>
           </div>
         </div>
       ) : null}

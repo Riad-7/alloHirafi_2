@@ -122,6 +122,31 @@ Le frontend appelle par defaut:
 VITE_API_URL=http://127.0.0.1:8000/api
 ```
 
+## Base de donnees en production
+
+SQLite est pratique pour le developpement local, mais il ne doit pas etre utilise en production.
+Pour un deploiement public, utilise une base MySQL geree par l'hebergeur, avec sauvegardes automatiques.
+
+Exemple MySQL:
+
+```env
+DB_CONNECTION=mysql
+DB_HOST=your-mysql-host
+DB_PORT=3306
+DB_DATABASE=alohirafi
+DB_USERNAME=alohirafi_user
+DB_PASSWORD=change-me
+```
+
+Avant la mise en ligne:
+
+```bash
+cd backend
+php artisan migrate --force
+```
+
+Un modele complet est disponible dans `backend/.env.production.example`.
+
 ## Important: SQLite + OneDrive
 
 Si ton projet est lance depuis un dossier OneDrive, SQLite peut provoquer un `disk I/O error`.

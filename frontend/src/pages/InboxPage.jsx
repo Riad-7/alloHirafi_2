@@ -229,12 +229,15 @@ export default function InboxPage() {
   const sendMessage = async (event) => {
     event.preventDefault();
 
-    if (!selectedId || !body.trim()) {
+    const messageBody = body.trim();
+
+    if (!selectedId || !messageBody) {
       return;
     }
 
     try {
       sendTypingState(false);
+      setBody('');
 
       if (typingTimeoutRef.current) {
         window.clearTimeout(typingTimeoutRef.current);
@@ -243,10 +246,8 @@ export default function InboxPage() {
 
       const data = await apiRequest(`/conversations/${selectedId}/messages`, {
         method: 'POST',
-        body: { body },
+        body: { body: messageBody },
       });
-
-      setBody('');
 
       if (data.conversation) {
         syncConversation(data.conversation);
@@ -254,6 +255,7 @@ export default function InboxPage() {
         await loadConversations();
       }
     } catch (error) {
+      setBody(messageBody);
       toast.error(error.message || t('inbox.send_error'));
     }
   };

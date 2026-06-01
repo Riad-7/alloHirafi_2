@@ -711,6 +711,40 @@ textarea {
   gap: 1rem;
 }
 
+.dashboard-artisan-actions {
+  display: grid;
+  gap: 1rem;
+}
+
+.dashboard-action-grid {
+  display: grid;
+  gap: 1rem;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+}
+
+.dashboard-action-card {
+  display: grid;
+  gap: 0.35rem;
+  padding: 1rem;
+  border-radius: 18px;
+  border: 1px solid rgba(13, 27, 42, 0.08);
+  background: rgba(255, 255, 255, 0.86);
+  color: inherit;
+  text-decoration: none;
+  transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
+}
+
+.dashboard-action-card:hover {
+  transform: translateY(-2px);
+  border-color: rgba(37, 99, 235, 0.24);
+  box-shadow: 0 16px 36px rgba(15, 23, 42, 0.1);
+}
+
+.dashboard-action-card span {
+  color: var(--muted);
+  font-size: 0.92rem;
+}
+
 .posts-panel,
 .messages-panel,
 .conversation-list {

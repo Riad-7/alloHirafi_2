@@ -16,15 +16,27 @@ class DashboardController extends Controller
     {
         $user = $request->user()->load('artisanProfile');
 
-        $conversationCount = Conversation::query()
-            ->where('client_id', $user->id)
-            ->orWhere('artisan_id', $user->id)
-            ->count();
+        $conversationQuery = Conversation::query();
+        $quoteQuery = Quote::query();
 
-        $quotesCount = Quote::query()
-            ->where('client_id', $user->id)
-            ->orWhere('artisan_id', $user->id)
-            ->count();
+        if ($user->role === 'client') {
+            $conversationQuery->where('client_id', $user->id);
+            $quoteQuery->where('client_id', $user->id);
+        } elseif ($user->role === 'artisan') {
+            $conversationQuery->where('artisan_id', $user->id);
+            $quoteQuery->where('artisan_id', $user->id);
+        } else {
+            $conversationQuery
+                ->where('client_id', $user->id)
+                ->orWhere('artisan_id', $user->id);
+
+            $quoteQuery
+                ->where('client_id', $user->id)
+                ->orWhere('artisan_id', $user->id);
+        }
+
+        $conversationCount = $conversationQuery->count();
+        $quotesCount = $quoteQuery->count();
 
         $stats = [
             'conversations' => $conversationCount,
