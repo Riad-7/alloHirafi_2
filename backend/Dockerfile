@@ -12,12 +12,12 @@ RUN apt-get update && apt-get install -y \
     libfreetype6-dev \
     libonig-dev \
     libxml2-dev \
+    libpq-dev \
     libzip-dev \
     zip \
     unzip \
-    default-mysql-client \
     && docker-php-ext-configure gd --with-freetype --with-jpeg \
-    && docker-php-ext-install pdo pdo_mysql mbstring exif pcntl bcmath gd zip \
+    && docker-php-ext-install pdo pdo_mysql pdo_pgsql mbstring exif pcntl bcmath gd zip \
     && rm -rf /var/lib/apt/lists/*
 
 # Install Composer
@@ -53,7 +53,11 @@ RUN sed -i '/<Directory \/var\/www\/>/,/<\/Directory>/ s/AllowOverride None/Allo
 # Create storage link and generate key if needed
 RUN php artisan storage:link || true
 
-EXPOSE 80
+# Render uses PORT env variable — configure Apache to listen on it
+RUN sed -i 's/Listen 80/Listen ${PORT}/g' /etc/apache2/ports.conf \
+    && sed -i 's/:80/:${PORT}/g' /etc/apache2/sites-available/000-default.conf
+
+EXPOSE ${PORT}
 
 # Entrypoint script
 COPY docker-entrypoint.sh /usr/local/bin/

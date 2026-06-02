@@ -1,0 +1,57 @@
+# render.yaml — Render Blueprint for AloHirafi Backend
+# See https://render.com/docs/blueprint-spec
+
+databases:
+  - name: alohirafi-db
+    plan: free
+    databaseName: alohirafi
+    user: alohirafi_user
+
+services:
+  - type: web
+    name: alohirafi-backend
+    runtime: docker
+    dockerfilePath: ./backend/Dockerfile
+    dockerContext: ./backend
+    plan: free
+    region: frankfurt
+    healthCheckPath: /up
+    envVars:
+      - key: APP_NAME
+        value: AloHirafi
+      - key: APP_ENV
+        value: production
+      - key: APP_DEBUG
+        value: "false"
+      - key: APP_KEY
+        generateValue: true
+      - key: APP_URL
+        value: https://alohirafi-backend.onrender.com
+      - key: FRONTEND_URL
+        value: https://frontend-xi-lilac-62.vercel.app
+      - key: FRONTEND_URLS
+        value: https://frontend-xi-lilac-62.vercel.app
+      - key: SANCTUM_STATEFUL_DOMAINS
+        value: frontend-xi-lilac-62.vercel.app
+      - key: SESSION_DOMAIN
+        value: ""
+      - key: SESSION_DRIVER
+        value: database
+      - key: SESSION_SECURE_COOKIE
+        value: "true"
+      - key: SESSION_SAME_SITE
+        value: none
+      - key: DB_CONNECTION
+        value: pgsql
+      - key: DATABASE_URL
+        fromDatabase:
+          name: alohirafi-db
+          property: connectionString
+      - key: LOG_LEVEL
+        value: warning
+      - key: FILESYSTEM_DISK
+        value: public
+      - key: CACHE_STORE
+        value: database
+      - key: QUEUE_CONNECTION
+        value: database

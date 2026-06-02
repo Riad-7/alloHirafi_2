@@ -17,4 +17,7 @@ php artisan migrate --force
 # Seed if DB is empty (first deployment)
 php artisan db:seed --force 2>/dev/null || true
 
+# Create storage link (safe to re-run)
+php artisan storage:link 2>/dev/null || true
+
 exec "$@"
