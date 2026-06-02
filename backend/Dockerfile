@@ -35,6 +35,9 @@ RUN composer install --no-dev --optimize-autoloader --no-interaction --no-script
 # Copy the rest of the application
 COPY . .
 
+# Create an empty .env so artisan commands don't fail during build
+RUN touch .env
+
 # Run post-install scripts
 RUN composer run-script post-autoload-dump
 
