@@ -53,7 +53,9 @@ RUN sed -i '/<Directory \/var\/www\/>/,/<\/Directory>/ s/AllowOverride None/Allo
 # Create storage link and generate key if needed
 RUN php artisan storage:link || true
 
-EXPOSE 80
+# Railway uses dynamic PORT env var (default 80 for local)
+ENV PORT=80
+EXPOSE ${PORT}
 
 # Entrypoint script
 COPY docker-entrypoint.sh /usr/local/bin/

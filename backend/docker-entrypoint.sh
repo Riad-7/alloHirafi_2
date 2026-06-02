@@ -1,6 +1,13 @@
 #!/bin/bash
 set -e
 
+# Railway assigns a dynamic PORT – make Apache listen on it.
+if [ -n "$PORT" ] && [ "$PORT" != "80" ]; then
+    sed -i "s/Listen 80/Listen ${PORT}/g" /etc/apache2/ports.conf
+    sed -i "s/:80/:${PORT}/g" /etc/apache2/sites-available/*.conf
+    sed -i "s/<VirtualHost \*:80>/<VirtualHost *:${PORT}>/g" /etc/apache2/sites-available/*.conf
+fi
+
 # Generate app key if not set
 if [ -z "$APP_KEY" ]; then
     php artisan key:generate --force
