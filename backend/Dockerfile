@@ -35,6 +35,9 @@ RUN composer install --no-dev --optimize-autoloader --no-interaction --no-script
 # Copy the rest of the application
 COPY . .
 
+# Create an empty .env so artisan commands don't fail during build
+RUN touch .env
+
 # Run post-install scripts
 RUN composer run-script post-autoload-dump
 
@@ -53,7 +56,8 @@ RUN sed -i '/<Directory \/var\/www\/>/,/<\/Directory>/ s/AllowOverride None/Allo
 # Create storage link and generate key if needed
 RUN php artisan storage:link || true
 
-# Render uses PORT env variable — configure Apache to listen on it
+# Render/Railway use dynamic PORT env var — configure Apache to listen on it
+ENV PORT=80
 RUN sed -i 's/Listen 80/Listen ${PORT}/g' /etc/apache2/ports.conf \
     && sed -i 's/:80/:${PORT}/g' /etc/apache2/sites-available/000-default.conf
 
