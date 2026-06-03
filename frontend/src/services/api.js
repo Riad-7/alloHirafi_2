@@ -1,8 +1,11 @@
 const browserHost = typeof window !== 'undefined' ? window.location.hostname : 'localhost';
-const configuredApiUrl = import.meta.env.VITE_API_URL ?? `http://${browserHost}:8000/api`;
+const isDevelopment = browserHost === 'localhost' || browserHost === '127.0.0.1';
+
+const configuredApiUrl = import.meta.env.VITE_API_URL ?? (isDevelopment ? `http://${browserHost}:8000/api` : '/api');
+const configuredBackendUrl = import.meta.env.VITE_BACKEND_URL ?? (isDevelopment ? `http://${browserHost}:8000` : '');
 
 function normalizeLocalUrl(url) {
-  if (!['localhost', '127.0.0.1'].includes(browserHost)) {
+  if (!isDevelopment) {
     return url;
   }
 
@@ -10,7 +13,7 @@ function normalizeLocalUrl(url) {
 }
 
 export const API_URL = normalizeLocalUrl(configuredApiUrl);
-export const BACKEND_URL = normalizeLocalUrl(import.meta.env.VITE_BACKEND_URL ?? API_URL.replace(/\/api\/?$/, ''));
+export const BACKEND_URL = normalizeLocalUrl(configuredBackendUrl);
 const SAFE_METHODS = new Set(['GET', 'HEAD', 'OPTIONS']);
 const LOCALE_STORAGE_KEY = 'alohirafi.locale';
 
@@ -137,5 +140,5 @@ export function apiRequest(path, options = {}) {
 }
 
 export function authRequest(path, options = {}) {
-  return requestJson(`${BACKEND_URL}${path}`, options);
+  return requestJson(`${API_URL}${path}`, options);
 }

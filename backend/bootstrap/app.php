@@ -16,6 +16,13 @@ return Application::configure(basePath: dirname(__DIR__))
     ->withMiddleware(function (Middleware $middleware): void {
         $middleware->trustProxies(at: '*');
 
+        if (env('APP_ENV') === 'production') {
+            $middleware->alias([
+                'forceHttps' => \App\Http\Middleware\ForceHttps::class,
+            ]);
+            $middleware->append(\App\Http\Middleware\ForceHttps::class);
+        }
+
         $middleware->api(prepend: [
             \Laravel\Sanctum\Http\Middleware\EnsureFrontendRequestsAreStateful::class,
         ]);

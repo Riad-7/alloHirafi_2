@@ -17,6 +17,8 @@ Route::middleware('setLocale')->group(function () {
     Route::get('/users/{user}', [UserProfileController::class, 'show']);
     Route::post('/search/ai', [SearchController::class, 'search']);
 
+    require __DIR__.'/auth.php';
+
     Route::middleware('auth:sanctum')->group(function () {
         Route::get('/user', function (Request $request): array {
             return ['user' => AuthUserPayload::from($request->user())];

@@ -86,7 +86,14 @@ return [
 
         'pgsql' => [
             'driver' => 'pgsql',
-            'url' => env('DB_URL', env('DATABASE_URL')),
+            'url' => (function() {
+                $url = env('DB_URL', env('DATABASE_URL'));
+                if ($url) {
+                    $url = preg_replace('/([?&])options=[^&]+(&|$)/', '$1', $url);
+                    $url = rtrim($url, '?&');
+                }
+                return $url;
+            })(),
             'host' => env('DB_HOST', '127.0.0.1'),
             'port' => env('DB_PORT', '5432'),
             'database' => env('DB_DATABASE', 'laravel'),
@@ -96,7 +103,7 @@ return [
             'prefix' => '',
             'prefix_indexes' => true,
             'search_path' => 'public',
-            'sslmode' => env('DB_SSLMODE', 'prefer'),
+            'sslmode' => env('DB_SSLMODE', 'require'),
         ],
 
         'sqlsrv' => [

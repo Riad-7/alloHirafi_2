@@ -1,5 +1,7 @@
 {
   "rewrites": [
+    { "source": "/api/(.*)", "destination": "https://backend-orpin-two-83.vercel.app/api/$1" },
+    { "source": "/sanctum/(.*)", "destination": "https://backend-orpin-two-83.vercel.app/sanctum/$1" },
     { "source": "/(.*)", "destination": "/index.html" }
   ],
   "headers": [
