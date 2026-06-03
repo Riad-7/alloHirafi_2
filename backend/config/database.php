@@ -84,27 +84,45 @@ return [
             ]) : [],
         ],
 
-        'pgsql' => [
-            'driver' => 'pgsql',
-            'url' => (function() {
-                $url = env('DB_URL', env('DATABASE_URL'));
-                if ($url) {
-                    $url = preg_replace('/([?&])options=[^&]+(&|$)/', '$1', $url);
-                    $url = rtrim($url, '?&');
+        'pgsql' => (function() {
+            $url = env('DB_URL', env('DATABASE_URL'));
+            $config = [
+                'driver' => 'pgsql',
+                'host' => env('DB_HOST', '127.0.0.1'),
+                'port' => env('DB_PORT', '5432'),
+                'database' => env('DB_DATABASE', 'laravel'),
+                'username' => env('DB_USERNAME', 'root'),
+                'password' => env('DB_PASSWORD', ''),
+                'charset' => env('DB_CHARSET', 'utf8'),
+                'prefix' => '',
+                'prefix_indexes' => true,
+                'search_path' => 'public',
+                'sslmode' => env('DB_SSLMODE', 'require'),
+                'options' => [],
+            ];
+
+            if ($url) {
+                $parsed = parse_url($url);
+                if ($parsed) {
+                    if (isset($parsed['host'])) $config['host'] = $parsed['host'];
+                    if (isset($parsed['port'])) $config['port'] = $parsed['port'];
+                    if (isset($parsed['user'])) $config['username'] = urldecode($parsed['user']);
+                    if (isset($parsed['pass'])) $config['password'] = urldecode($parsed['pass']);
+                    if (isset($parsed['path'])) $config['database'] = ltrim($parsed['path'], '/');
+                    
+                    if (isset($parsed['query'])) {
+                        parse_str($parsed['query'], $query);
+                        foreach ($query as $key => $value) {
+                            if ($key !== 'options') {
+                                $config[$key] = $value;
+                            }
+                        }
+                    }
                 }
-                return $url;
-            })(),
-            'host' => env('DB_HOST', '127.0.0.1'),
-            'port' => env('DB_PORT', '5432'),
-            'database' => env('DB_DATABASE', 'laravel'),
-            'username' => env('DB_USERNAME', 'root'),
-            'password' => env('DB_PASSWORD', ''),
-            'charset' => env('DB_CHARSET', 'utf8'),
-            'prefix' => '',
-            'prefix_indexes' => true,
-            'search_path' => 'public',
-            'sslmode' => env('DB_SSLMODE', 'require'),
-        ],
+            }
+            
+            return $config;
+        })(),
 
         'sqlsrv' => [
             'driver' => 'sqlsrv',
