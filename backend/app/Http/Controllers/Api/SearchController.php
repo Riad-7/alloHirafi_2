@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Models\Artisan;
+use App\Services\ArtisanMatchCandidate;
 use App\Services\AiSearchInterpreter;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -20,29 +21,66 @@ class SearchController extends Controller
             'prompt' => ['required', 'string', 'max:500'],
         ]);
 
-        $filters = $this->interpreter->interpret($data['prompt']);
+        $availableCrafts = Artisan::query()
+            ->select('craft')
+            ->distinct()
+            ->pluck('craft')
+            ->filter()
+            ->values()
+            ->all();
 
-        $query = Artisan::query()->with(['user', 'posts.images']);
+        $availableCities = Artisan::query()
+            ->join('users', 'users.id', '=', 'artisans.user_id')
+            ->select('users.city')
+            ->distinct()
+            ->pluck('city')
+            ->filter()
+            ->values()
+            ->all();
 
-        if ($filters['metier']) {
-            $query->where('craft', 'like', '%'.$filters['metier'].'%');
+        $filters = $this->interpreter->interpret($data['prompt'], $availableCrafts, $availableCities);
+
+        $artisans = Artisan::query()
+            ->with(['user', 'posts.images', 'reviews.client'])
+            ->get()
+            ->map(function (Artisan $artisan) use ($filters): Artisan {
+                [$score, $reasons] = $this->interpreter->score(new ArtisanMatchCandidate(
+                    craft: $artisan->craft,
+                    bio: $artisan->bio,
+                    city: $artisan->user?->city,
+                    postsText: $artisan->posts
+                        ->map(fn ($post) => implode(' ', [$post->title, $post->description, $post->city]))
+                        ->implode(' '),
+                    isAvailable: (bool) $artisan->is_available,
+                    hourlyRate: $artisan->hourly_rate !== null ? (float) $artisan->hourly_rate : null,
+                    averageRating: (float) $artisan->average_rating,
+                    isVerified: (bool) ($artisan->is_verified ?? false),
+                ), $filters);
+
+                $artisan->setAttribute('match_score', $score);
+                $artisan->setAttribute('match_reasons', $reasons);
+
+                return $artisan;
+            });
+
+        $matched = $artisans
+            ->filter(fn (Artisan $artisan) => $artisan->getAttribute('match_score') > 0);
+
+        if ($matched->isEmpty()) {
+            $matched = $artisans;
         }
 
-        if ($filters['ville']) {
-            $query->whereHas('user', fn ($user) => $user->where('city', $filters['ville']));
-        }
+        $matched = $matched
+            ->sortByDesc(fn (Artisan $artisan) => $artisan->getAttribute('match_score'))
+            ->values();
 
-        if ($filters['disponible']) {
-            $query->where('is_available', true);
-        }
-
-        if ($filters['sort'] === 'tarif_asc') {
-            $query->orderBy('hourly_rate');
+        if (($filters['sort'] ?? null) === 'tarif_asc') {
+            $matched = $matched->sortBy(fn (Artisan $artisan) => $artisan->hourly_rate ?? PHP_INT_MAX)->values();
         }
 
         return response()->json([
             'filters' => $filters,
-            'artisans' => $query->get(),
+            'artisans' => $matched,
         ]);
     }
 }

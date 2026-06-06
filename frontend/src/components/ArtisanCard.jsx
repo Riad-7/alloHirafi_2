@@ -58,6 +58,15 @@ export default function ArtisanCard({ artisan, onContact, onReview }) {
 
         <p className="muted-copy artisan-bio">{artisan.bio}</p>
 
+        {artisan.match_score ? (
+          <div className="ai-match-box">
+            <strong>Match IA {artisan.match_score}%</strong>
+            {artisan.match_reasons?.length ? (
+              <span>{artisan.match_reasons.join(' · ')}</span>
+            ) : null}
+          </div>
+        ) : null}
+
         <div className="artisan-meta">
           <div className="meta-item">
             <strong>{artisan.hourly_rate} DH</strong>

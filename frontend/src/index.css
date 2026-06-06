@@ -512,6 +512,23 @@ textarea {
   border: 1px solid rgba(31, 111, 235, 0.22);
 }
 
+.ai-match-box {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.45rem;
+  align-items: center;
+  margin: 0 0 0.9rem;
+  padding: 0.65rem 0.75rem;
+  border-radius: var(--radius-lg);
+  background: rgba(37, 99, 235, 0.08);
+  color: var(--blue-800);
+  font-size: 0.85rem;
+}
+
+.ai-match-box span {
+  color: var(--neutral-600);
+}
+
 .user-pill small,
 .stat-card span,
 .stat-card small,

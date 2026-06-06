@@ -16,10 +16,11 @@ export default function SearchPage() {
   const toast = useToast();
   const navigate = useNavigate();
   const [filters, setFilters] = useState({ metier: '', ville: '', note: '' });
-  const [prompt, setPrompt] = useState('plombier pas cher disponible a Agadir');
+  const [prompt, setPrompt] = useState('');
   const [artisans, setArtisans] = useState([]);
   const [posts, setPosts] = useState([]);
   const [aiFilters, setAiFilters] = useState(null);
+  const [aiSearching, setAiSearching] = useState(false);
   const [activeTab, setActiveTab] = useState('artisans');
   const [reviewDraft, setReviewDraft] = useState({
     artisanId: null,
@@ -72,15 +73,25 @@ export default function SearchPage() {
   const runAiSearch = async (event) => {
     event.preventDefault();
 
+    if (!prompt.trim()) {
+      toast.error(t('search.ai_error'));
+      return;
+    }
+
+    setAiSearching(true);
+
     try {
       const data = await apiRequest('/search/ai', {
         method: 'POST',
-        body: { prompt },
+        body: { prompt: prompt.trim() },
       });
       setAiFilters(data.filters);
       setArtisans(data.artisans);
+      setActiveTab('artisans');
     } catch (err) {
       toast.error(err.message || t('search.ai_error'));
+    } finally {
+      setAiSearching(false);
     }
   };
 
@@ -180,8 +191,13 @@ export default function SearchPage() {
               placeholder={t('search.ai_placeholder')}
               style={{ flex: 1, padding: '0.75rem 1rem', border: 'none', borderRadius: '0.25rem', outline: 'none' }}
             />
-            <button className="primary-button" style={{ whiteSpace: 'nowrap' }}>{t('search.ai_button')}</button>
+            <button className="primary-button" style={{ whiteSpace: 'nowrap' }} disabled={aiSearching}>
+              {aiSearching ? '...' : t('search.ai_button')}
+            </button>
           </form>
+          <p className="muted-copy" style={{ marginTop: '0.75rem', color: 'rgba(0, 0, 0, 0.72)' }}>
+            Ex: “lma kayhreb mn robinet f Agadir”, “need electrician today in Rabat”, “بغيت صباغ رخيص فكازا”
+          </p>
         </div>
         {aiFilters ? (
           <div className="ai-chip-row">
@@ -193,6 +209,11 @@ export default function SearchPage() {
                 </span>
               ))}
           </div>
+        ) : null}
+        {aiSearching ? (
+          <p className="muted-copy" style={{ marginTop: '1rem', color: 'rgba(0, 0, 0, 0.72)' }}>
+            Analyse IA en cours...
+          </p>
         ) : null}
       </div>
 
